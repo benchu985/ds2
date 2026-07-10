@@ -307,6 +307,9 @@ func (h *Handler) handleClaudeStreamRealtime(w http.ResponseWriter, r *http.Requ
 	defer func() { _ = resp.Body.Close() }()
 	if resp.StatusCode != http.StatusOK {
 		body, _ := io.ReadAll(resp.Body)
+		if detail := completionruntime.TryDetectCaptchaFromBody(body); detail != "" {
+			config.Logger.Warn("[claude_stream] captcha challenge detected on initial response", "detail", detail)
+		}
 		if historySession != nil {
 			historySession.Error(resp.StatusCode, strings.TrimSpace(string(body)), "error", "", "")
 		}
@@ -365,6 +368,9 @@ func (h *Handler) handleClaudeStreamRealtimeWithRetry(w http.ResponseWriter, r *
 	if resp.StatusCode != http.StatusOK {
 		defer func() { _ = resp.Body.Close() }()
 		body, _ := io.ReadAll(resp.Body)
+		if detail := completionruntime.TryDetectCaptchaFromBody(body); detail != "" {
+			config.Logger.Warn("[claude_stream_realtime] captcha challenge detected on initial response", "account", a.AccountID, "detail", detail)
+		}
 		if historySession != nil {
 			historySession.Error(resp.StatusCode, strings.TrimSpace(string(body)), "error", "", "")
 		}

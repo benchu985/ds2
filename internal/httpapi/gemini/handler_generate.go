@@ -15,6 +15,7 @@ import (
 	"ds2api/internal/assistantturn"
 	"ds2api/internal/auth"
 	"ds2api/internal/completionruntime"
+	"ds2api/internal/config"
 	"ds2api/internal/httpapi/openai/history"
 	"ds2api/internal/httpapi/requestbody"
 	"ds2api/internal/promptcompat"
@@ -324,6 +325,9 @@ func (h *Handler) handleNonStreamGenerateContent(w http.ResponseWriter, resp *ht
 	defer func() { _ = resp.Body.Close() }()
 	if resp.StatusCode != http.StatusOK {
 		body, _ := io.ReadAll(resp.Body)
+		if detail := completionruntime.TryDetectCaptchaFromBody(body); detail != "" {
+			config.Logger.Warn("[gemini_nonstream] captcha challenge detected on initial response", "detail", detail)
+		}
 		writeGeminiError(w, resp.StatusCode, strings.TrimSpace(string(body)))
 		return
 	}

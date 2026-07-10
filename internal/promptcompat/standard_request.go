@@ -78,12 +78,14 @@ func (r StandardRequest) CompletionPayload(sessionID string) map[string]any {
 	}
 	payload := map[string]any{
 		"chat_session_id":   sessionID,
-		"model_type":        modelType,
 		"parent_message_id": nil,
+		"model_type":        modelType,
 		"prompt":            r.FinalPrompt,
 		"ref_file_ids":      refFileIDs,
 		"thinking_enabled":  r.Thinking,
 		"search_enabled":    r.Search,
+		"action":            nil,
+		"preempt":           false,
 	}
 	for k, v := range r.PassThrough {
 		payload[k] = v

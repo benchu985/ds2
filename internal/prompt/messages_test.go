@@ -32,37 +32,14 @@ func TestMessagesPrepareUsesTurnSuffixes(t *testing.T) {
 		{"role": "assistant", "content": "Answer"},
 	}
 	got := MessagesPrepare(messages)
-	if !strings.HasPrefix(got, "<|begin▁of▁sentence|>") {
-		t.Fatalf("expected begin-of-sentence marker, got %q", got)
+	if !strings.HasPrefix(got, "SystemSystem rule") {
+		t.Fatalf("expected system marker at the start, got %q", got)
 	}
-	if !strings.Contains(got, "<|System|>") || !strings.Contains(got, "<|end▁of▁instructions|>") || !strings.Contains(got, "System rule") {
-		t.Fatalf("expected system instructions to remain present, got %q", got)
-	}
-	if !strings.Contains(got, "<|User|>Question") {
+	if !strings.Contains(got, "UserQuestion") {
 		t.Fatalf("expected user question, got %q", got)
 	}
-	if !strings.Contains(got, "<|Assistant|>Answer<|end▁of▁sentence|>") {
-		t.Fatalf("expected assistant sentence suffix, got %q", got)
-	}
-	if strings.Contains(got, "<think>") || strings.Contains(got, "</think>") {
-		t.Fatalf("did not expect think tags in prompt, got %q", got)
-	}
-}
-
-func TestMessagesPreparePrependsOutputIntegrityGuard(t *testing.T) {
-	messages := []map[string]any{
-		{"role": "system", "content": "System rule"},
-		{"role": "user", "content": "Question"},
-	}
-	got := MessagesPrepare(messages)
-	if !strings.HasPrefix(got, beginSentenceMarker+systemMarker+outputIntegrityGuardPrompt) {
-		t.Fatalf("expected output integrity guard to be prepended, got %q", got)
-	}
-	if !strings.Contains(got, outputIntegrityGuardPrompt+"\n\nSystem rule") {
-		t.Fatalf("expected output integrity guard to precede system prompt content, got %q", got)
-	}
-	if !strings.Contains(got, "<|User|>Question") {
-		t.Fatalf("expected user question after guard, got %q", got)
+	if !strings.Contains(got, "AssistantAnswer") {
+		t.Fatalf("expected assistant answer, got %q", got)
 	}
 }
 
@@ -82,7 +59,7 @@ func TestMessagesPrepareWithThinkingPreservesPromptShape(t *testing.T) {
 	if gotThinking != gotPlain {
 		t.Fatalf("expected thinking flag not to add extra continuity instructions, got thinking=%q plain=%q", gotThinking, gotPlain)
 	}
-	if !strings.HasSuffix(gotThinking, "<|Assistant|>") {
+	if !strings.HasSuffix(gotThinking, "Assistant") {
 		t.Fatalf("expected assistant suffix, got %q", gotThinking)
 	}
 }

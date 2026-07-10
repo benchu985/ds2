@@ -2,7 +2,9 @@ package client
 
 import (
 	"context"
+	"crypto/rand"
 	dsprotocol "ds2api/internal/deepseek/protocol"
+	"encoding/base64"
 	"errors"
 	"fmt"
 	"net/http"
@@ -14,11 +16,19 @@ import (
 )
 
 func (c *Client) Login(ctx context.Context, acc config.Account) (string, error) {
+	deviceID, err := c.ensureAccountDeviceID(acc)
+	if err != nil {
+		return "", err
+	}
+	acc.DeviceID = deviceID
 	clients := c.requestClientsForAccount(acc)
 	payload := map[string]any{
+		"email":     "",
+		"mobile":    "",
 		"password":  strings.TrimSpace(acc.Password),
-		"device_id": "deepseek_to_api",
-		"os":        "android",
+		"area_code": "",
+		"device_id": deviceID,
+		"os":        "web",
 	}
 	if email := strings.TrimSpace(acc.Email); email != "" {
 		payload["email"] = email
@@ -47,7 +57,63 @@ func (c *Client) Login(ctx context.Context, acc config.Account) (string, error) 
 	if strings.TrimSpace(token) == "" {
 		return "", errors.New("missing login token")
 	}
+	ssoID, _ := user["id"].(string)
+	loginAuth := &auth.RequestAuth{
+		UseConfigToken: true,
+		DeepSeekToken:  token,
+		AccountID:      acc.Identifier(),
+		Account:        acc,
+	}
+	auth.WithAuth(ctx, loginAuth)
+	c.reportClientSettingsAfterLogin(ctx, loginAuth, ssoID)
 	return token, nil
+}
+
+func (c *Client) ensureAccountDeviceID(acc config.Account) (string, error) {
+	deviceID := strings.TrimSpace(acc.DeviceID)
+	if deviceID != "" {
+		return deviceID, nil
+	}
+	deviceID, err := createRandomDeviceID()
+	if err != nil {
+		return "", err
+	}
+	if c == nil || c.Store == nil {
+		return deviceID, nil
+	}
+	identifier := acc.Identifier()
+	if identifier == "" {
+		return deviceID, nil
+	}
+	if err := c.Store.Update(func(cfg *config.Config) error {
+		for i := range cfg.Accounts {
+			if cfg.Accounts[i].Identifier() == identifier {
+				cfg.Accounts[i].DeviceID = deviceID
+				return nil
+			}
+		}
+		return errors.New("account not found")
+	}); err != nil {
+		return "", err
+	}
+	return deviceID, nil
+}
+
+func createRandomDeviceID() (string, error) {
+	buf := make([]byte, 64)
+	if _, err := rand.Read(buf); err != nil {
+		return "", err
+	}
+	return "B" + base64.StdEncoding.EncodeToString(buf), nil
+}
+
+func (c *Client) reportClientSettingsAfterLogin(ctx context.Context, a *auth.RequestAuth, ssoID string) {
+	if c == nil || a == nil || strings.TrimSpace(a.DeepSeekToken) == "" || strings.TrimSpace(a.Account.DeviceID) == "" {
+		return
+	}
+	if err := c.ReportClientSettings(ctx, a, ssoID); err != nil {
+		config.Logger.Warn("[client_settings] report after login failed", "account", a.AccountID, "error", err)
+	}
 }
 
 func (c *Client) CreateSession(ctx context.Context, a *auth.RequestAuth, maxAttempts int) (string, error) {
@@ -59,7 +125,7 @@ func (c *Client) CreateSession(ctx context.Context, a *auth.RequestAuth, maxAtte
 	refreshed := false
 	for attempts < maxAttempts {
 		headers := c.authHeaders(a.DeepSeekToken)
-		resp, status, err := c.postJSONWithStatus(ctx, clients.regular, clients.fallback, dsprotocol.DeepSeekCreateSessionURL, headers, map[string]any{"agent": "chat"})
+		resp, status, err := c.postJSONWithStatus(ctx, clients.regular, clients.fallback, dsprotocol.DeepSeekCreateSessionURL, headers, map[string]any{})
 		if err != nil {
 			config.Logger.Warn("[create_session] request error", "error", err, "account", a.AccountID)
 			attempts++
@@ -71,6 +137,15 @@ func (c *Client) CreateSession(ctx context.Context, a *auth.RequestAuth, maxAtte
 			if sessionID != "" {
 				return sessionID, nil
 			}
+		}
+		if ch := DetectCaptchaChallenge(resp); ch != nil {
+			config.Logger.Warn("[create_session] captcha challenge detected, account should be cooled down", "account", a.AccountID, "instruction", ch.Instruction, "image_url", ch.ImageURL, "rid", ch.Rid)
+			if a.UseConfigToken && c.Auth.SwitchAccount(ctx, a) {
+				refreshed = false
+				attempts++
+				continue
+			}
+			return "", &RequestFailure{Op: "create session", Kind: FailureCaptchaRequired, Message: failureMessage(msg, bizMsg, "captcha challenge required")}
 		}
 		config.Logger.Warn("[create_session] failed", "status", status, "code", code, "biz_code", bizCode, "msg", msg, "biz_msg", bizMsg, "use_config_token", a.UseConfigToken, "account", a.AccountID)
 		if a.UseConfigToken {
@@ -109,6 +184,17 @@ func (c *Client) GetPowForTarget(ctx context.Context, a *auth.RequestAuth, targe
 	lastFailureKind := FailureUnknown
 	lastFailureMessage := ""
 	for attempts < maxAttempts {
+		if c.powCache != nil {
+			if cachedChallenge, ok := c.powCache.get(a.AccountID, targetPath); ok {
+				answer, err := ComputePow(ctx, cachedChallenge)
+				if err != nil {
+					attempts++
+					continue
+				}
+				c.prefetchPowChallenge(a, targetPath)
+				return BuildPowHeader(cachedChallenge, answer)
+			}
+		}
 		headers := c.authHeaders(a.DeepSeekToken)
 		resp, status, err := c.postJSONWithStatus(ctx, clients.regular, clients.fallback, dsprotocol.DeepSeekCreatePowURL, headers, map[string]any{"target_path": targetPath})
 		if err != nil {
@@ -128,7 +214,20 @@ func (c *Client) GetPowForTarget(ctx context.Context, a *auth.RequestAuth, targe
 				attempts++
 				continue
 			}
+			c.prefetchPowChallenge(a, targetPath)
 			return BuildPowHeader(challenge, answer)
+		}
+		if ch := DetectCaptchaChallenge(resp); ch != nil {
+			config.Logger.Warn("[get_pow] captcha challenge detected, account should be cooled down", "account", a.AccountID, "target_path", targetPath, "instruction", ch.Instruction, "image_url", ch.ImageURL, "rid", ch.Rid)
+			lastFailureKind = FailureCaptchaRequired
+			lastFailureMessage = failureMessage(msg, bizMsg, "captcha challenge required")
+			if a.UseConfigToken && c.Auth.SwitchAccount(ctx, a) {
+				refreshed = false
+				attempts++
+				continue
+			}
+			attempts++
+			continue
 		}
 		config.Logger.Warn("[get_pow] failed", "status", status, "code", code, "biz_code", bizCode, "msg", msg, "biz_msg", bizMsg, "use_config_token", a.UseConfigToken, "account", a.AccountID, "target_path", targetPath)
 		lastFailureMessage = failureMessage(msg, bizMsg, "get pow failed")
@@ -271,10 +370,10 @@ func extractResponseStatus(resp map[string]any) (code int, bizCode int, msg stri
 	return code, bizCode, msg, bizMsg
 }
 
-func normalizeMobileForLogin(raw string) (mobile string, areaCode any) {
+func normalizeMobileForLogin(raw string) (mobile string, areaCode string) {
 	s := strings.TrimSpace(raw)
 	if s == "" {
-		return "", nil
+		return "", ""
 	}
 	hasPlus := strings.HasPrefix(s, "+")
 	var b strings.Builder
@@ -286,10 +385,10 @@ func normalizeMobileForLogin(raw string) (mobile string, areaCode any) {
 	}
 	digits := b.String()
 	if digits == "" {
-		return "", nil
+		return "", ""
 	}
 	if (hasPlus || strings.HasPrefix(digits, "86")) && strings.HasPrefix(digits, "86") && len(digits) == 13 {
-		return digits[2:], nil
+		return digits[2:], "+86"
 	}
-	return digits, nil
+	return digits, "+86"
 }

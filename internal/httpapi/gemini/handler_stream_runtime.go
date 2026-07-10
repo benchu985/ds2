@@ -11,6 +11,7 @@ import (
 	"ds2api/internal/assistantturn"
 	"ds2api/internal/auth"
 	"ds2api/internal/completionruntime"
+	"ds2api/internal/config"
 	dsprotocol "ds2api/internal/deepseek/protocol"
 	"ds2api/internal/promptcompat"
 	"ds2api/internal/responsehistory"
@@ -27,6 +28,9 @@ func (h *Handler) handleStreamGenerateContent(w http.ResponseWriter, r *http.Req
 	defer func() { _ = resp.Body.Close() }()
 	if resp.StatusCode != http.StatusOK {
 		body, _ := io.ReadAll(resp.Body)
+		if detail := completionruntime.TryDetectCaptchaFromBody(body); detail != "" {
+			config.Logger.Warn("[gemini_stream] captcha challenge detected on initial response", "detail", detail)
+		}
 		if historySession != nil {
 			historySession.Error(resp.StatusCode, strings.TrimSpace(string(body)), "error", "", "")
 		}
@@ -92,6 +96,9 @@ func (h *Handler) handleStreamGenerateContentWithRetry(w http.ResponseWriter, r 
 	if resp.StatusCode != http.StatusOK {
 		defer func() { _ = resp.Body.Close() }()
 		body, _ := io.ReadAll(resp.Body)
+		if detail := completionruntime.TryDetectCaptchaFromBody(body); detail != "" {
+			config.Logger.Warn("[gemini_stream_retry] captcha challenge detected on initial response", "account", a.AccountID, "detail", detail)
+		}
 		if historySession != nil {
 			historySession.Error(resp.StatusCode, strings.TrimSpace(string(body)), "error", "", "")
 		}

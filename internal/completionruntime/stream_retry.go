@@ -131,6 +131,35 @@ func ExecuteStreamWithRetry(ctx context.Context, ds DeepSeekCaller, a *auth.Requ
 			if msg == "" {
 				msg = http.StatusText(nextResp.StatusCode)
 			}
+			if captchaBody := tryDetectCaptchaFromBody(body); captchaBody != "" {
+				config.Logger.Warn("[completion_runtime_empty_retry] captcha challenge detected, mapping to 429 for account switch", "surface", surface, "stream", opts.Stream, "account", a.AccountID, "detail", captchaBody)
+				if canRetryOnAlternateAccount(ctx, a, &assistantturn.OutputError{Status: http.StatusTooManyRequests}, opts.RetryEnabled, &accountSwitchAttempted) {
+					switched, switchErr := startPayloadCompletionOnAlternateAccount(ctx, ds, a, payload, opts, maxAttempts)
+					if switchErr != nil {
+						if hooks.OnRetryFailure != nil {
+							hooks.OnRetryFailure(switchErr.Status, switchErr.Message, switchErr.Code)
+						}
+						return
+					}
+					if switched.Response != nil {
+						config.Logger.Info("[completion_runtime_account_switch_retry] retrying after captcha", "surface", surface, "stream", opts.Stream, "account", a.AccountID)
+						currentResp = switched.Response
+						currentPayload = clonePayload(payload)
+						pow = switched.Pow
+						if hooks.OnAccountSwitch != nil {
+							hooks.OnAccountSwitch(switched.SessionID)
+						}
+						if hooks.OnRetryPrompt != nil {
+							hooks.OnRetryPrompt(opts.UsagePrompt)
+						}
+						continue
+					}
+				}
+				if hooks.OnRetryFailure != nil {
+					hooks.OnRetryFailure(http.StatusTooManyRequests, "Captcha challenge detected, account may be rate-limited.", "captcha_required")
+				}
+				return
+			}
 			if hooks.OnRetryFailure != nil {
 				hooks.OnRetryFailure(nextResp.StatusCode, msg, "error")
 			}

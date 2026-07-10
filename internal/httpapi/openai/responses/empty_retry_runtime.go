@@ -56,6 +56,9 @@ func (h *Handler) prepareResponsesStreamRuntime(w http.ResponseWriter, resp *htt
 	if resp.StatusCode != http.StatusOK {
 		defer func() { _ = resp.Body.Close() }()
 		body, _ := io.ReadAll(resp.Body)
+		if detail := completionruntime.TryDetectCaptchaFromBody(body); detail != "" {
+			config.Logger.Warn("[openai_responses_stream] captcha challenge detected on initial response", "detail", detail)
+		}
 		if historySession != nil {
 			historySession.Error(resp.StatusCode, strings.TrimSpace(string(body)), "error", "", "")
 		}

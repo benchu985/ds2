@@ -5,8 +5,8 @@ const path = require('path');
 
 const DEFAULT_CLIENT = Object.freeze({
   name: 'DeepSeek',
-  platform: 'android',
-  androidApiLevel: '35',
+  platform: 'web',
+  androidApiLevel: '',
   locale: 'zh_CN',
 });
 
@@ -14,7 +14,8 @@ const DEFAULT_BASE_HEADERS = Object.freeze({
   Host: 'chat.deepseek.com',
   Accept: 'application/json',
   'Content-Type': 'application/json',
-  'accept-charset': 'UTF-8',
+  'x-client-bundle-id': 'com.deepseek.chat',
+  'x-client-timezone-offset': '28800',
 });
 
 const DEFAULT_SKIP_PATTERNS = Object.freeze([
@@ -53,10 +54,7 @@ function buildBaseHeaders(parsed, client) {
     : {};
   const baseHeaders = { ...DEFAULT_BASE_HEADERS, ...rawBaseHeaders };
   if (client.name && client.version) {
-    const androidSuffix = client.platform === 'android' && client.androidApiLevel
-      ? ` Android/${client.androidApiLevel}`
-      : '';
-    baseHeaders['User-Agent'] = `${client.name}/${client.version}${androidSuffix}`;
+    baseHeaders['User-Agent'] = `${client.name}/${client.version}`;
   }
   if (client.platform) {
     baseHeaders['x-client-platform'] = client.platform;

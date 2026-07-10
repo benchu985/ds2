@@ -251,6 +251,10 @@ func collectAttempt(resp *http.Response, stdReq promptcompat.StandardRequest, us
 		if message == "" {
 			message = http.StatusText(resp.StatusCode)
 		}
+		if captchaBody := tryDetectCaptchaFromBody(body); captchaBody != "" {
+			config.Logger.Warn("[completion_runtime] captcha challenge detected, mapping to 429 for account switch", "surface", stdReq.Surface, "detail", captchaBody)
+			return assistantturn.Turn{}, &assistantturn.OutputError{Status: http.StatusTooManyRequests, Message: "Captcha challenge detected, account may be rate-limited.", Code: "captcha_required"}
+		}
 		return assistantturn.Turn{}, &assistantturn.OutputError{Status: resp.StatusCode, Message: message, Code: "error"}
 	}
 	result := sse.CollectStream(resp, stdReq.Thinking, false)

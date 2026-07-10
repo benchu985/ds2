@@ -22,8 +22,13 @@ test('js shared constants derive client headers from shared json', () => {
   const client = shared.client;
   assert.equal(deepseekConstants.CLIENT_VERSION, client.version);
   assert.equal(deepseekConstants.BASE_HEADERS['x-client-version'], client.version);
-  assert.equal(deepseekConstants.BASE_HEADERS['User-Agent'], `${client.name}/${client.version} Android/${client.android_api_level}`);
+  assert.equal(deepseekConstants.BASE_HEADERS['x-client-platform'], 'web');
+  assert.equal(deepseekConstants.BASE_HEADERS['User-Agent'], `DeepSeek/${client.version}`);
+  assert.equal(deepseekConstants.BASE_HEADERS['x-client-bundle-id'], 'com.deepseek.chat');
   assert.equal(deepseekConstants.BASE_HEADERS['Content-Type'], 'application/json');
+  for (const h of ['sec-ch-ua', 'sec-ch-ua-mobile', 'sec-ch-ua-platform', 'sec-fetch-site', 'sec-fetch-mode', 'sec-fetch-dest', 'Referer', 'Origin', 'accept-language', 'accept-encoding', 'accept-charset']) {
+    assert.equal(deepseekConstants.BASE_HEADERS[h], undefined, `unexpected browser header present: ${h}`);
+  }
 });
 
 test('js compat: sse fixtures', () => {

@@ -26,12 +26,14 @@ type Client struct {
 	fallbackS  *http.Client
 	maxRetries int
 
+	powCache *powChallengeCache
+
 	proxyClientsMu sync.RWMutex
 	proxyClients   map[string]requestClients
 }
 
 func NewClient(store *config.Store, resolver *auth.Resolver) *Client {
-	return &Client{
+	client := &Client{
 		Store:        store,
 		Auth:         resolver,
 		capture:      devcapture.Global(),
@@ -41,7 +43,14 @@ func NewClient(store *config.Store, resolver *auth.Resolver) *Client {
 		fallbackS:    &http.Client{Timeout: 0},
 		maxRetries:   3,
 		proxyClients: map[string]requestClients{},
+		powCache:     newPowChallengeCache(),
 	}
+	if resolver != nil {
+		resolver.PostLogin = func(ctx context.Context, a *auth.RequestAuth) {
+			client.reportClientSettingsAfterLogin(ctx, a, "")
+		}
+	}
+	return client
 }
 
 // PreloadPow 保留兼容接口，纯 Go 实现无需预加载。

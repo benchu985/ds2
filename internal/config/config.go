@@ -33,6 +33,7 @@ type Account struct {
 	Mobile   string `json:"mobile,omitempty"`
 	Password string `json:"password,omitempty"`
 	Token    string `json:"token,omitempty"`
+	DeviceID string `json:"device_id,omitempty"`
 	ProxyID  string `json:"proxy_id,omitempty"`
 }
 
@@ -98,6 +99,7 @@ func (c *Config) NormalizeCredentials() {
 	for i := range c.Accounts {
 		c.Accounts[i].Name = strings.TrimSpace(c.Accounts[i].Name)
 		c.Accounts[i].Remark = strings.TrimSpace(c.Accounts[i].Remark)
+		c.Accounts[i].DeviceID = strings.TrimSpace(c.Accounts[i].DeviceID)
 	}
 
 	c.Vercel = NormalizeVercelConfig(c.Vercel)

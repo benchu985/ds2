@@ -50,7 +50,7 @@ function normalizeAutoDeleteMode(raw) {
 }
 
 function fromServerForm(data) {
-    const currentInputFileEnabled = data.current_input_file?.enabled ?? true
+    const currentInputFileEnabled = data.current_input_file?.enabled ?? false
     return {
         admin: { jwt_expire_hours: Number(data.admin?.jwt_expire_hours || 24) },
         runtime: {

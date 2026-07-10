@@ -21,6 +21,9 @@ func (h *Handler) handleNonStreamWithRetry(w http.ResponseWriter, ctx context.Co
 	if resp.StatusCode != http.StatusOK {
 		defer func() { _ = resp.Body.Close() }()
 		body, _ := io.ReadAll(resp.Body)
+		if detail := completionruntime.TryDetectCaptchaFromBody(body); detail != "" {
+			config.Logger.Warn("[openai_chat] captcha challenge detected on initial response", "account", a.AccountID, "detail", detail)
+		}
 		if historySession != nil {
 			historySession.error(resp.StatusCode, string(body), "error", "", "")
 		}
@@ -113,6 +116,9 @@ func (h *Handler) prepareChatStreamRuntime(w http.ResponseWriter, resp *http.Res
 	if resp.StatusCode != http.StatusOK {
 		defer func() { _ = resp.Body.Close() }()
 		body, _ := io.ReadAll(resp.Body)
+		if detail := completionruntime.TryDetectCaptchaFromBody(body); detail != "" {
+			config.Logger.Warn("[openai_chat_stream] captcha challenge detected on initial response", "detail", detail)
+		}
 		if historySession != nil {
 			historySession.error(resp.StatusCode, string(body), "error", "", "")
 		}

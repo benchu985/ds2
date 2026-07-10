@@ -1,16 +1,14 @@
 {
   "client": {
     "name": "DeepSeek",
-    "platform": "android",
-    "version": "2.0.4",
-    "android_api_level": "35",
+    "platform": "web",
+    "version": "2.2.0",
     "locale": "zh_CN"
   },
   "base_headers": {
     "Host": "chat.deepseek.com",
     "Accept": "application/json",
-    "Content-Type": "application/json",
-    "accept-charset": "UTF-8"
+    "Content-Type": "application/json"
   },
   "skip_contains_patterns": [
     "quasi_status",

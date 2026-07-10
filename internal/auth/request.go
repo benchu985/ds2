@@ -35,11 +35,13 @@ type RequestAuth struct {
 }
 
 type LoginFunc func(ctx context.Context, acc config.Account) (string, error)
+type PostLoginFunc func(ctx context.Context, a *RequestAuth)
 
 type Resolver struct {
-	Store *config.Store
-	Pool  *account.Pool
-	Login LoginFunc
+	Store     *config.Store
+	Pool      *account.Pool
+	Login     LoginFunc
+	PostLogin PostLoginFunc
 
 	mu               sync.Mutex
 	tokenRefreshedAt map[string]time.Time
@@ -157,7 +159,13 @@ func (r *Resolver) loginAndPersist(ctx context.Context, a *RequestAuth) error {
 	a.Account.Token = token
 	a.DeepSeekToken = token
 	r.markTokenRefreshedNow(a.AccountID)
-	return r.Store.UpdateAccountToken(a.AccountID, token)
+	if err := r.Store.UpdateAccountToken(a.AccountID, token); err != nil {
+		return err
+	}
+	if r.PostLogin != nil {
+		r.PostLogin(ctx, a)
+	}
+	return nil
 }
 
 func (r *Resolver) RefreshToken(ctx context.Context, a *RequestAuth) bool {

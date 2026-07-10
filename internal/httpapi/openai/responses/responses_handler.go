@@ -145,6 +145,9 @@ func (h *Handler) handleResponsesNonStream(w http.ResponseWriter, resp *http.Res
 	defer func() { _ = resp.Body.Close() }()
 	if resp.StatusCode != http.StatusOK {
 		body, _ := io.ReadAll(resp.Body)
+		if detail := completionruntime.TryDetectCaptchaFromBody(body); detail != "" {
+			config.Logger.Warn("[openai_responses_nonstream] captcha challenge detected on initial response", "detail", detail)
+		}
 		writeOpenAIError(w, resp.StatusCode, strings.TrimSpace(string(body)))
 		return
 	}
@@ -176,6 +179,9 @@ func (h *Handler) handleResponsesStream(w http.ResponseWriter, r *http.Request, 
 	defer func() { _ = resp.Body.Close() }()
 	if resp.StatusCode != http.StatusOK {
 		body, _ := io.ReadAll(resp.Body)
+		if detail := completionruntime.TryDetectCaptchaFromBody(body); detail != "" {
+			config.Logger.Warn("[openai_responses_stream] captcha challenge detected on initial response", "detail", detail)
+		}
 		writeOpenAIError(w, resp.StatusCode, strings.TrimSpace(string(body)))
 		return
 	}

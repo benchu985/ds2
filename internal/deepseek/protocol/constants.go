@@ -7,26 +7,29 @@ import (
 )
 
 const (
-	DeepSeekHost                 = "chat.deepseek.com"
-	DeepSeekLoginURL             = "https://chat.deepseek.com/api/v0/users/login"
-	DeepSeekCreateSessionURL     = "https://chat.deepseek.com/api/v0/chat_session/create"
-	DeepSeekCreatePowURL         = "https://chat.deepseek.com/api/v0/chat/create_pow_challenge"
-	DeepSeekCompletionURL        = "https://chat.deepseek.com/api/v0/chat/completion"
-	DeepSeekContinueURL          = "https://chat.deepseek.com/api/v0/chat/continue"
-	DeepSeekUploadFileURL        = "https://chat.deepseek.com/api/v0/file/upload_file"
-	DeepSeekFetchFilesURL        = "https://chat.deepseek.com/api/v0/file/fetch_files"
-	DeepSeekFetchSessionURL      = "https://chat.deepseek.com/api/v0/chat_session/fetch_page"
-	DeepSeekDeleteSessionURL     = "https://chat.deepseek.com/api/v0/chat_session/delete"
-	DeepSeekDeleteAllSessionsURL = "https://chat.deepseek.com/api/v0/chat_session/delete_all"
-	DeepSeekCompletionTargetPath = "/api/v0/chat/completion"
-	DeepSeekUploadTargetPath     = "/api/v0/file/upload_file"
+	DeepSeekHost                    = "chat.deepseek.com"
+	DeepSeekLoginURL                = "https://chat.deepseek.com/api/v0/users/login"
+	DeepSeekCreateSessionURL        = "https://chat.deepseek.com/api/v0/chat_session/create"
+	DeepSeekCreatePowURL            = "https://chat.deepseek.com/api/v0/chat/create_pow_challenge"
+	DeepSeekCompletionURL           = "https://chat.deepseek.com/api/v0/chat/completion"
+	DeepSeekContinueURL             = "https://chat.deepseek.com/api/v0/chat/continue"
+	DeepSeekUploadFileURL           = "https://chat.deepseek.com/api/v0/file/upload_file"
+	DeepSeekFetchFilesURL           = "https://chat.deepseek.com/api/v0/file/fetch_files"
+	DeepSeekFetchSessionURL         = "https://chat.deepseek.com/api/v0/chat_session/fetch_page"
+	DeepSeekDeleteSessionURL        = "https://chat.deepseek.com/api/v0/chat_session/delete"
+	DeepSeekDeleteAllSessionsURL    = "https://chat.deepseek.com/api/v0/chat_session/delete_all"
+	DeepSeekClientSettingsURL       = "https://chat.deepseek.com/api/v0/client/settings"
+	DeepSeekClientSettingsReportURL = "https://chat.deepseek.com/api/v0/client/settings/report"
+	DeepSeekCompletionTargetPath    = "/api/v0/chat/completion"
+	DeepSeekUploadTargetPath        = "/api/v0/file/upload_file"
 )
 
 var defaultStaticBaseHeaders = map[string]string{
-	"Host":           "chat.deepseek.com",
-	"Accept":         "application/json",
-	"Content-Type":   "application/json",
-	"accept-charset": "UTF-8",
+	"Host":                     "chat.deepseek.com",
+	"Accept":                   "application/json",
+	"Content-Type":             "application/json",
+	"x-client-bundle-id":       "com.deepseek.chat",
+	"x-client-timezone-offset": "28800",
 }
 
 var defaultSkipContainsPatterns = []string{
@@ -94,10 +97,7 @@ func normalizeClientConstants(in clientConstants) clientConstants {
 		in.Name = "DeepSeek"
 	}
 	if in.Platform == "" {
-		in.Platform = "android"
-	}
-	if in.AndroidAPILevel == "" {
-		in.AndroidAPILevel = "35"
+		in.Platform = "web"
 	}
 	if in.Locale == "" {
 		in.Locale = "zh_CN"
@@ -114,11 +114,7 @@ func buildBaseHeaders(client clientConstants, overrides map[string]string) map[s
 		out[k] = v
 	}
 	if client.Name != "" && client.Version != "" {
-		userAgent := client.Name + "/" + client.Version
-		if client.Platform == "android" && client.AndroidAPILevel != "" {
-			userAgent += " Android/" + client.AndroidAPILevel
-		}
-		out["User-Agent"] = userAgent
+		out["User-Agent"] = client.Name + "/" + client.Version
 	}
 	if client.Platform != "" {
 		out["x-client-platform"] = client.Platform
