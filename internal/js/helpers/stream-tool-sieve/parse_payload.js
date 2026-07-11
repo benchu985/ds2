@@ -4,8 +4,8 @@ const CDATA_PATTERN = /^(?:<|〈)(?:!|！)\[CDATA\[([\s\S]*?)]](?:>|＞|〉)$/i;
 const XML_ATTR_PATTERN = /\b([a-z0-9_:-]+)\s*=\s*("([^"]*)"|'([^']*)')/gi;
 const TOOL_MARKUP_NAMES = [
   { raw: 'tool_calls', canonical: 'tool_calls' },
-  { raw: 'tool-calls', canonical: 'tool_calls', dsmlOnly: true },
-  { raw: 'toolcalls', canonical: 'tool_calls', dsmlOnly: true },
+  { raw: 'tool-calls', canonical: 'tool_calls', epseOnly: true },
+  { raw: 'toolcalls', canonical: 'tool_calls', epseOnly: true },
   { raw: 'invoke', canonical: 'invoke' },
   { raw: 'parameter', canonical: 'parameter' },
 ];
@@ -186,7 +186,7 @@ function updateCDATAStateLine(inCDATA, line) {
 }
 
 function parseMarkupToolCalls(text) {
-  const normalized = normalizeDSMLToolCallMarkup(toStringSafe(text));
+  const normalized = normalizeEPSEToolCallMarkup(toStringSafe(text));
   if (!normalized.ok) {
     return [];
   }
@@ -245,24 +245,24 @@ function findToolCallElementBlocksOutsideIgnored(text) {
   return out;
 }
 
-function normalizeDSMLToolCallMarkup(text) {
+function normalizeEPSEToolCallMarkup(text) {
   const raw = toStringSafe(text);
   if (!raw) {
     return { text: '', ok: true };
   }
   const canonicalized = canonicalizeToolCallCandidateSpans(raw);
   const styles = containsToolMarkupSyntaxOutsideIgnored(canonicalized);
-  if (!styles.dsml && !styles.canonical) {
+  if (!styles.epse && !styles.canonical) {
     return { text: canonicalized, ok: true };
   }
   return {
-    text: replaceDSMLToolMarkupOutsideIgnored(canonicalized),
+    text: replaceEPSEToolMarkupOutsideIgnored(canonicalized),
     ok: true,
   };
 }
 
-function containsDSMLToolMarkup(text) {
-  return containsToolMarkupSyntaxOutsideIgnored(text).dsml;
+function containsEPSEToolMarkup(text) {
+  return containsToolMarkupSyntaxOutsideIgnored(text).epse;
 }
 
 function containsCanonicalToolMarkup(text) {
@@ -271,7 +271,7 @@ function containsCanonicalToolMarkup(text) {
 
 function containsToolCallWrapperSyntaxOutsideIgnored(text) {
   const raw = toStringSafe(text);
-  const styles = { dsml: false, canonical: false };
+  const styles = { epse: false, canonical: false };
   if (!raw) {
     return styles;
   }
@@ -295,12 +295,12 @@ function containsToolCallWrapperSyntaxOutsideIgnored(text) {
         i = tag.end + 1;
         continue;
       }
-      if (tag.dsmlLike) {
-        styles.dsml = true;
+      if (tag.epseLike) {
+        styles.epse = true;
       } else {
         styles.canonical = true;
       }
-      if (styles.dsml && styles.canonical) {
+      if (styles.epse && styles.canonical) {
         return styles;
       }
       i = tag.end + 1;
@@ -312,7 +312,7 @@ function containsToolCallWrapperSyntaxOutsideIgnored(text) {
 }
 function containsToolMarkupSyntaxOutsideIgnored(text) {
   const raw = toStringSafe(text);
-  const styles = { dsml: false, canonical: false };
+  const styles = { epse: false, canonical: false };
   if (!raw) {
     return styles;
   }
@@ -332,12 +332,12 @@ function containsToolMarkupSyntaxOutsideIgnored(text) {
     }
     const tag = scanToolMarkupTagAt(raw, i);
     if (tag) {
-      if (tag.dsmlLike) {
-        styles.dsml = true;
+      if (tag.epseLike) {
+        styles.epse = true;
       } else {
         styles.canonical = true;
       }
-      if (styles.dsml && styles.canonical) {
+      if (styles.epse && styles.canonical) {
         return styles;
       }
       i = tag.end + 1;
@@ -348,7 +348,7 @@ function containsToolMarkupSyntaxOutsideIgnored(text) {
   return styles;
 }
 
-function replaceDSMLToolMarkupOutsideIgnored(text) {
+function replaceEPSEToolMarkupOutsideIgnored(text) {
   const raw = toStringSafe(text);
   if (!raw) {
     return '';
@@ -589,8 +589,8 @@ function scanToolMarkupTagAt(text, start) {
   const prefix = consumeToolMarkupNamePrefix(raw, lower, i);
   const prefixStart = i;
   i = prefix.next;
-  let dsmlLike = prefix.dsmlLike;
-  let { name, len } = matchToolMarkupName(raw, i, dsmlLike);
+  let epseLike = prefix.epseLike;
+  let { name, len } = matchToolMarkupName(raw, i, epseLike);
   if (!name) {
     const fallback = matchToolMarkupNameAfterArbitraryPrefix(raw, prefixStart);
     if (!fallback.ok) {
@@ -602,7 +602,7 @@ function scanToolMarkupTagAt(text, start) {
     name = fallback.name;
     i = fallback.start;
     len = fallback.len;
-    dsmlLike = true;
+    epseLike = true;
   }
   const originalNameEnd = i + len;
   let nameEnd = originalNameEnd;
@@ -641,8 +641,8 @@ function scanToolMarkupTagAt(text, start) {
     name,
     closing,
     selfClosing: isSelfClosingXmlTag(raw.slice(start, end)),
-    dsmlLike,
-    canonical: !dsmlLike,
+    epseLike,
+    canonical: !epseLike,
   };
 }
 
@@ -767,7 +767,7 @@ function isPartialToolMarkupTagPrefix(text) {
     if (hasToolMarkupNamePrefix(raw, i)) {
       return true;
     }
-    if (hasDSMLNamePrefixOrPartial(raw, i)) {
+    if (hasEPSENamePrefixOrPartial(raw, i)) {
       return true;
     }
     if (hasPartialToolMarkupNameAfterArbitraryPrefix(raw, i)) {
@@ -784,14 +784,14 @@ function isPartialToolMarkupTagPrefix(text) {
 
 function consumeToolMarkupNamePrefix(raw, lower, idx) {
   let next = idx;
-  let dsmlLike = false;
+  let epseLike = false;
   while (true) {
     const consumed = consumeToolMarkupNamePrefixOnce(raw, lower, next);
     if (!consumed.ok) {
-      return { next, dsmlLike };
+      return { next, epseLike };
     }
     next = consumed.next;
-    dsmlLike = true;
+    epseLike = true;
   }
 }
 
@@ -823,7 +823,7 @@ function hasPartialToolMarkupNameAfterArbitraryPrefix(raw, start) {
     if (toolMarkupPrefixAllowsLocalNameAt(raw, start, idx) && hasToolMarkupNamePrefix(raw, idx)) {
       return true;
     }
-    if (toolMarkupPrefixAllowsLocalNameAt(raw, start, idx) && hasDSMLNamePrefixOrPartial(raw, idx)) {
+    if (toolMarkupPrefixAllowsLocalNameAt(raw, start, idx) && hasEPSENamePrefixOrPartial(raw, idx)) {
       return true;
     }
     idx += 1;
@@ -831,16 +831,16 @@ function hasPartialToolMarkupNameAfterArbitraryPrefix(raw, start) {
   return toolMarkupPrefixAllowsLocalName(raw.slice(start));
 }
 
-function hasDSMLNamePrefixOrPartial(raw, start) {
+function hasEPSENamePrefixOrPartial(raw, start) {
   const tail = normalizedASCIITailAt(raw, start);
-  return tail.startsWith('dsml') || 'dsml'.startsWith(tail) || hasConfusablePartialKeywordPrefix(raw, start, 'dsml');
+  return tail.startsWith('epse') || 'epse'.startsWith(tail) || hasConfusablePartialKeywordPrefix(raw, start, 'epse');
 }
 
 function toolMarkupPrefixAllowsLocalName(prefix) {
   if (!prefix) {
     return false;
   }
-  if (normalizedASCIITailAt(prefix, 0).includes('dsml')) {
+  if (normalizedASCIITailAt(prefix, 0).includes('epse')) {
     return true;
   }
   if (/[="']/u.test(prefix)) {
@@ -889,9 +889,9 @@ function consumeToolMarkupNamePrefixOnce(raw, lower, idx) {
   if (spacingLen > 0) {
     return { next: idx + spacingLen, ok: true };
   }
-  const dsml = consumeToolKeyword(raw, idx, 'dsml');
-  if (dsml.ok) {
-    let next = dsml.next;
+  const epse = consumeToolKeyword(raw, idx, 'epse');
+  if (epse.ok) {
+    let next = epse.next;
     const dashLen = toolMarkupDashLenAt(raw, next);
     const underscoreLen = toolMarkupUnderscoreLenAt(raw, next);
     if (dashLen) {
@@ -1027,9 +1027,9 @@ function hasConfusablePartialKeywordPrefix(raw, start, keyword) {
   return matched > 0 && matched < keyword.length && idx === raw.length;
 }
 
-function matchToolMarkupName(raw, start, dsmlLike) {
+function matchToolMarkupName(raw, start, epseLike) {
   for (const name of TOOL_MARKUP_NAMES) {
-    if (name.dsmlOnly && !dsmlLike) {
+    if (name.epseOnly && !epseLike) {
       continue;
     }
     const matched = consumeToolKeyword(raw, start, name.raw);
@@ -1149,8 +1149,8 @@ function canonicalizeRecognizedToolMarkupTag(rawTag, tag) {
   if (tag.closing) {
     out += '/';
   }
-  if (tag.dsmlLike) {
-    out += '|DSML|';
+  if (tag.epseLike) {
+    out += '|EPSE|';
   }
   out += tag.name;
   for (const attr of attrs) {
@@ -2643,7 +2643,7 @@ module.exports = {
   stripFencedCodeBlocks,
   stripMarkdownCodeSpans,
   parseMarkupToolCalls,
-  normalizeDSMLToolCallMarkup,
+  normalizeEPSEToolCallMarkup,
   containsToolMarkupSyntaxOutsideIgnored,
   containsToolCallWrapperSyntaxOutsideIgnored,
   hasRepairableXMLToolCallsWrapper,

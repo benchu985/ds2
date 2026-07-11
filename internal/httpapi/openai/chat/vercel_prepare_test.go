@@ -147,7 +147,7 @@ func TestHandleVercelStreamPrepareAppliesCurrentInputFile(t *testing.T) {
 	}
 }
 
-func TestHandleVercelStreamPrepareUsesHalfwidthDSMLToolPrompt(t *testing.T) {
+func TestHandleVercelStreamPrepareUsesHalfwidthEPSEToolPrompt(t *testing.T) {
 	t.Setenv("VERCEL", "1")
 	t.Setenv("DS2API_VERCEL_INTERNAL_SECRET", "stream-secret")
 
@@ -199,8 +199,8 @@ func TestHandleVercelStreamPrepareUsesHalfwidthDSMLToolPrompt(t *testing.T) {
 	payload, _ := body["payload"].(map[string]any)
 	payloadPrompt, _ := payload["prompt"].(string)
 	for label, promptText := range map[string]string{"final_prompt": finalPrompt, "payload.prompt": payloadPrompt} {
-		if !strings.Contains(promptText, "<|DSML|tool_calls>") || !strings.Contains(promptText, "Tag punctuation alphabet: ASCII < > / = \" plus the halfwidth pipe |.") {
-			t.Fatalf("expected %s to contain halfwidth DSML tool instructions, got %q", label, promptText)
+		if !strings.Contains(promptText, "<|EPSE|tool_calls>") || !strings.Contains(promptText, `标签语法中所允许使用的标点符号字符集仅限 ASCII 的 < > / = " 以及半角竖线 |。`) {
+			t.Fatalf("expected %s to contain halfwidth EPSE tool instructions, got %q", label, promptText)
 		}
 		if strings.Contains(promptText, "\uff5c") || strings.Contains(promptText, "full"+"width vertical bar") {
 			t.Fatalf("expected %s not to contain legacy pipe guidance, got %q", label, promptText)
@@ -373,7 +373,7 @@ func TestHandleVercelStreamPrepareUploadsToolsSeparately(t *testing.T) {
 	payload, _ := body["payload"].(map[string]any)
 	payloadPrompt, _ := payload["prompt"].(string)
 	for label, promptText := range map[string]string{"final_prompt": finalPrompt, "payload.prompt": payloadPrompt} {
-		if !strings.Contains(promptText, "DS2API_TOOLS.txt") || !strings.Contains(promptText, "TOOL CALL FORMAT") {
+		if !strings.Contains(promptText, "DS2API_TOOLS.txt") || !strings.Contains(promptText, "工具调用格式规范") {
 			t.Fatalf("expected %s to reference tools file and retain tool instructions, got %q", label, promptText)
 		}
 		if strings.Contains(promptText, "Description: search docs") {

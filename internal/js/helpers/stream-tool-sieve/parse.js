@@ -7,7 +7,7 @@ const {
   parseMarkupToolCalls,
   stripFencedCodeBlocks,
   containsToolCallWrapperSyntaxOutsideIgnored,
-  normalizeDSMLToolCallMarkup,
+  normalizeEPSEToolCallMarkup,
   hasRepairableXMLToolCallsWrapper,
   indexToolCDATAOpen,
   sanitizeLooseCDATA,
@@ -47,7 +47,7 @@ function parseToolCallsDetailed(text, toolNames) {
   if (shouldSkipToolCallParsingForCodeFenceExample(raw)) {
     return result;
   }
-  const normalized = normalizeDSMLToolCallMarkup(stripFencedCodeBlocks(raw).trim());
+  const normalized = normalizeEPSEToolCallMarkup(stripFencedCodeBlocks(raw).trim());
   if (!normalized.ok || !normalized.text) {
     return result;
   }
@@ -84,7 +84,7 @@ function parseStandaloneToolCallsDetailed(text, toolNames) {
   if (shouldSkipToolCallParsingForCodeFenceExample(raw)) {
     return result;
   }
-  const normalized = normalizeDSMLToolCallMarkup(stripFencedCodeBlocks(raw).trim());
+  const normalized = normalizeEPSEToolCallMarkup(stripFencedCodeBlocks(raw).trim());
   if (!normalized.ok || !normalized.text) {
     return result;
   }
@@ -135,7 +135,7 @@ function filterToolCallsDetailed(parsed, toolNames) {
 
 function looksLikeToolCallSyntax(text) {
   const styles = containsToolCallWrapperSyntaxOutsideIgnored(text);
-  return styles.dsml || styles.canonical;
+  return styles.epse || styles.canonical;
 }
 
 function shouldSkipToolCallParsingForCodeFenceExample(text) {

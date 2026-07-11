@@ -307,7 +307,7 @@ func TestHandleResponsesStreamPromotesThinkingToolCallsOnFinalizeWithoutMidstrea
 	}
 }
 
-func TestHandleResponsesStreamPromotesHiddenThinkingDSMLToolCallsOnFinalize(t *testing.T) {
+func TestHandleResponsesStreamPromotesHiddenThinkingEPSEToolCallsOnFinalize(t *testing.T) {
 	h := &Handler{}
 	req := httptest.NewRequest(http.MethodPost, "/v1/responses", nil)
 	rec := httptest.NewRecorder()
@@ -320,7 +320,7 @@ func TestHandleResponsesStreamPromotesHiddenThinkingDSMLToolCallsOnFinalize(t *t
 		return "data: " + string(b) + "\n"
 	}
 
-	streamBody := sseLine("response/thinking_content", `<|DSML|tool_calls><|DSML|invoke name="read_file"><|DSML|parameter name="path">README.MD</|DSML|parameter></|DSML|invoke></|DSML|tool_calls>`) + "data: [DONE]\n"
+	streamBody := sseLine("response/thinking_content", `<|EPSE|tool_calls><|EPSE|invoke name="read_file"><|EPSE|parameter name="path">README.MD</|EPSE|parameter></|EPSE|invoke></|EPSE|tool_calls>`) + "data: [DONE]\n"
 	resp := &http.Response{
 		StatusCode: http.StatusOK,
 		Body:       io.NopCloser(strings.NewReader(streamBody)),
@@ -489,13 +489,13 @@ func TestHandleResponsesNonStreamPromotesThinkingToolCallsWhenTextEmpty(t *testi
 	}
 }
 
-func TestHandleResponsesNonStreamPromotesHiddenThinkingDSMLToolCallsWhenTextEmpty(t *testing.T) {
+func TestHandleResponsesNonStreamPromotesHiddenThinkingEPSEToolCallsWhenTextEmpty(t *testing.T) {
 	h := &Handler{}
 	rec := httptest.NewRecorder()
 	resp := &http.Response{
 		StatusCode: http.StatusOK,
 		Body: io.NopCloser(strings.NewReader(
-			`data: {"p":"response/thinking_content","v":"<|DSML|tool_calls><|DSML|invoke name=\"read_file\"><|DSML|parameter name=\"path\">README.MD</|DSML|parameter></|DSML|invoke></|DSML|tool_calls>"}` + "\n" +
+			`data: {"p":"response/thinking_content","v":"<|EPSE|tool_calls><|EPSE|invoke name=\"read_file\"><|EPSE|parameter name=\"path\">README.MD</|EPSE|parameter></|EPSE|invoke></|EPSE|tool_calls>"}` + "\n" +
 				`data: [DONE]` + "\n",
 		)),
 	}

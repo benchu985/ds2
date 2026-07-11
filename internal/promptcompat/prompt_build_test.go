@@ -47,10 +47,10 @@ func TestBuildOpenAIFinalPrompt_HandlerPathIncludesToolRoundtripSemantics(t *tes
 	if !strings.Contains(finalPrompt, `"condition":"sunny"`) {
 		t.Fatalf("handler finalPrompt should preserve tool output content: %q", finalPrompt)
 	}
-	if !strings.Contains(finalPrompt, "<|DSML|tool_calls>") {
+	if !strings.Contains(finalPrompt, "<|EPSE|tool_calls>") {
 		t.Fatalf("handler finalPrompt should preserve assistant tool history: %q", finalPrompt)
 	}
-	if !strings.Contains(finalPrompt, `<|DSML|invoke name="get_weather">`) {
+	if !strings.Contains(finalPrompt, `<|EPSE|invoke name="get_weather">`) {
 		t.Fatalf("handler finalPrompt should include tool name history: %q", finalPrompt)
 	}
 }
@@ -74,13 +74,13 @@ func TestBuildOpenAIFinalPrompt_VercelPreparePathKeepsFinalAnswerInstruction(t *
 	}
 
 	finalPrompt, _ := buildOpenAIFinalPrompt(messages, tools, "", false)
-	if !strings.Contains(finalPrompt, "Remember: The ONLY valid way to use tools is the <|DSML|tool_calls>...</|DSML|tool_calls> block at the end of your response.") {
+	if !strings.Contains(finalPrompt, "请记住：使用工具的唯一正确方式是在回复末尾使用 <|EPSE|tool_calls>...</|EPSE|tool_calls> 代码块。") {
 		t.Fatalf("vercel prepare finalPrompt missing final tool-call anchor instruction: %q", finalPrompt)
 	}
-	if !strings.Contains(finalPrompt, "TOOL CALL FORMAT") {
+	if !strings.Contains(finalPrompt, "工具调用格式规范") {
 		t.Fatalf("vercel prepare finalPrompt missing xml format instruction: %q", finalPrompt)
 	}
-	if !strings.Contains(finalPrompt, "Do NOT wrap XML in markdown fences") {
+	if !strings.Contains(finalPrompt, "请勿使用 Markdown 代码块标记包裹 XML") {
 		t.Fatalf("vercel prepare finalPrompt missing no-fence xml instruction: %q", finalPrompt)
 	}
 	if strings.Contains(finalPrompt, "```json") {
@@ -116,7 +116,7 @@ func TestBuildOpenAIPromptWithToolInstructionsOnlyOmitsSchemas(t *testing.T) {
 	if !strings.Contains(finalPrompt, "Treat DS2API_TOOLS.txt as the authoritative list of callable tools and schemas") {
 		t.Fatalf("expected instructions-only prompt to point model at tools file, got: %q", finalPrompt)
 	}
-	if !strings.Contains(finalPrompt, "TOOL CALL FORMAT") || !strings.Contains(finalPrompt, "Remember: The ONLY valid way to use tools") {
+	if !strings.Contains(finalPrompt, "工具调用格式规范") || !strings.Contains(finalPrompt, "请记住：使用工具的唯一正确方式") {
 		t.Fatalf("expected tool format instructions to remain in live prompt, got: %q", finalPrompt)
 	}
 }
@@ -144,7 +144,7 @@ func TestBuildOpenAIToolsContextTranscriptContainsOnlyDescriptions(t *testing.T)
 			t.Fatalf("expected tools transcript to contain %q, got: %q", want, transcript)
 		}
 	}
-	if strings.Contains(transcript, "TOOL CALL FORMAT") || strings.Contains(transcript, "<|DSML|tool_calls>") {
+	if strings.Contains(transcript, "工具调用格式规范") || strings.Contains(transcript, "<|EPSE|tool_calls>") {
 		t.Fatalf("tools transcript should not duplicate format instructions, got: %q", transcript)
 	}
 }
@@ -168,7 +168,7 @@ func TestBuildOpenAIFinalPromptIncludesToolInstructions(t *testing.T) {
 	}
 
 	finalPrompt, _ := buildOpenAIFinalPrompt(messages, tools, "", false)
-	toolIdx := strings.Index(finalPrompt, "TOOL CALL FORMAT")
+	toolIdx := strings.Index(finalPrompt, "工具调用格式规范")
 	if toolIdx < 0 {
 		t.Fatalf("expected tool instructions in final prompt, got: %q", finalPrompt)
 	}

@@ -59,7 +59,7 @@ func parseToolCallsDetailedXMLOnly(text string) ToolCallParseResult {
 		return result
 	}
 
-	normalized, ok := normalizeDSMLToolCallMarkup(trimmed)
+	normalized, ok := normalizeEPSEToolCallMarkup(trimmed)
 	if !ok {
 		return result
 	}
@@ -98,8 +98,8 @@ func filterToolCallsDetailed(parsed []ParsedToolCall) ([]ParsedToolCall, []strin
 }
 
 func looksLikeToolCallSyntax(text string) bool {
-	hasDSML, hasCanonical := ContainsToolCallWrapperSyntaxOutsideIgnored(text)
-	return hasDSML || hasCanonical
+	hasEPSE, hasCanonical := ContainsToolCallWrapperSyntaxOutsideIgnored(text)
+	return hasEPSE || hasCanonical
 }
 
 func stripFencedCodeBlocks(text string) string {

@@ -9,57 +9,57 @@ import "strings"
 // The toolNames slice should contain the actual tool names available in the
 // current request; the function picks real names for examples.
 func BuildToolCallInstructions(toolNames []string) string {
-	return `TOOL CALL FORMAT — FOLLOW EXACTLY:
+	return `工具调用格式规范 — 请严格遵照执行：
 
-<|DSML|tool_calls>
-  <|DSML|invoke name="TOOL_NAME_HERE">
-    <|DSML|parameter name="PARAMETER_NAME"><![CDATA[PARAMETER_VALUE]]></|DSML|parameter>
-  </|DSML|invoke>
-</|DSML|tool_calls>
+<|EPSE|tool_calls>
+  <|EPSE|invoke name="TOOL_NAME_HERE">
+    <|EPSE|parameter name="PARAMETER_NAME"><![CDATA[PARAMETER_VALUE]]></|EPSE|parameter>
+  </|EPSE|invoke>
+</|EPSE|tool_calls>
 
-RULES:
-1) Use the <|DSML|tool_calls> wrapper format.
-2) Put one or more <|DSML|invoke> entries under a single <|DSML|tool_calls> root.
-3) Put the tool name in the invoke name attribute: <|DSML|invoke name="TOOL_NAME">.
-3a) Tag punctuation alphabet: ASCII < > / = " plus the halfwidth pipe |.
-4) All string values must use <![CDATA[...]]>, even short ones. This includes code, scripts, file contents, prompts, paths, names, and queries.
-5) Every top-level argument must be a <|DSML|parameter name="ARG_NAME">...</|DSML|parameter> node.
-6) Objects use nested XML elements inside the parameter body. Arrays may repeat <item> children.
-7) Numbers, booleans, and null stay plain text.
-8) Use only the parameter names in the tool schema. Do not invent fields.
-9) Fill parameters with the actual values required for this call. Do not emit placeholder, blank, or whitespace-only parameters.
-10) If a required parameter value is unknown, ask the user or answer normally instead of outputting an empty tool call.
-11) For shell tools such as Bash / execute_command, the command/script must be inside the command parameter. Never call them with an empty command.
-12) Do NOT wrap XML in markdown fences. Do NOT output explanations, role markers, or internal monologue.
-13) If you call a tool, the first non-whitespace characters of that tool block must be exactly <|DSML|tool_calls>.
-14) Never omit the opening <|DSML|tool_calls> tag, even if you already plan to close with </|DSML|tool_calls>.
-15) Compatibility note: the runtime also accepts the legacy XML tags <tool_calls> / <invoke> / <parameter>, but prefer the DSML-prefixed form above.
+规则说明：
+1) 必须使用 <|EPSE|tool_calls> 标签作为整体的封装容器。
+2) 允许在一个 <|EPSE|tool_calls> 根节点内部放置一个或多个 <|EPSE|invoke> 调用项。
+3) 需在 invoke 元素的 name 属性中明确指定具体工具名称：<|EPSE|invoke name="TOOL_NAME">。
+3a) 标签语法中所允许使用的标点符号字符集仅限 ASCII 的 < > / = " 以及半角竖线 |。
+4) 所有字符串类型的参数值都必须通过 <![CDATA[...]]> 进行包裹，即使内容极其简短也不例外；这涵盖了代码段、脚本、文件内容、提示词、路径、名称和查询语句等。
+5) 每一个顶层参数都必须体现为 <|EPSE|parameter name="ARG_NAME">...</|EPSE|parameter> 节点形式。
+6) 对象在参数主体内使用嵌套的 XML 元素。数组可以使用重复的 <item> 子元素。
+7) 数字、布尔值和 null 保持为纯文本。
+8) 仅使用工具架构(schema)中定义的参数名称。请勿自行创建字段。
+9) 使用本次调用所需的实际值填充参数。请勿输出占位符、空参数或仅包含空白字符的参数。
+10) 如果所需的参数值未知，请询问用户或正常回答，而不是输出空的工具调用。
+11) 对于 Bash / execute_command 等 Shell 工具，命令或脚本必须包含在 command 参数中。切勿在命令为空的情况下调用它们。
+12) 请勿使用 Markdown 代码块标记包裹 XML。请勿输出解释、角色标识或内心独白。
+13) 如果调用工具，该工具代码块的第一个非空白字符必须严格为 <|EPSE|tool_calls>。
+14) 切勿省略起始标签 <|EPSE|tool_calls>，即使你打算随后使用 </|EPSE|tool_calls> 闭合标签。
+15) 兼容性说明：运行时环境也接受旧版 XML 标签 <tool_calls> / <invoke> / <parameter>，但建议优先使用上述带有 EPSE 前缀的格式。
 
-PARAMETER SHAPES:
-- string => <|DSML|parameter name="x"><![CDATA[value]]></|DSML|parameter>
-- object => <|DSML|parameter name="x"><field>...</field></|DSML|parameter>
-- array => <|DSML|parameter name="x"><item>...</item><item>...</item></|DSML|parameter>
-- number/bool/null => <|DSML|parameter name="x">plain_text</|DSML|parameter>
+参数格式：
+- string => <|EPSE|parameter name="x"><![CDATA[value]]></|EPSE|parameter>
+- object => <|EPSE|parameter name="x"><field>...</field></|EPSE|parameter>
+- array => <|EPSE|parameter name="x"><item>...</item><item>...</item></|EPSE|parameter>
+- number/bool/null => <|EPSE|parameter name="x">plain_text</|EPSE|parameter>
 
-【WRONG — Do NOT do these】:
+【Wrong — 请勿这样操作】:
 
-Wrong 1 — mixed text after XML:
-  <|DSML|tool_calls>...</|DSML|tool_calls> I hope this helps.
-Wrong 2 — Markdown code fences:
+Wrong 1 — XML 之后包含其他文本:
+  <|EPSE|tool_calls>...</|EPSE|tool_calls> I hope this helps.
+Wrong 2 — 使用 Markdown 代码块标记:
   ` + "```xml" + `
-  <|DSML|tool_calls>...</|DSML|tool_calls>
+  <|EPSE|tool_calls>...</|EPSE|tool_calls>
   ` + "```" + `
-Wrong 3 — missing opening wrapper:
-  <|DSML|invoke name="TOOL_NAME">...</|DSML|invoke>
-  </|DSML|tool_calls>
-Wrong 4 — empty parameters:
-  <|DSML|tool_calls>
-    <|DSML|invoke name="Bash">
-      <|DSML|parameter name="command"></|DSML|parameter>
-    </|DSML|invoke>
-  </|DSML|tool_calls>
+Wrong 3 — 缺少起始包裹标签:
+  <|EPSE|invoke name="TOOL_NAME">...</|EPSE|invoke>
+  </|EPSE|tool_calls>
+Wrong 4 — 参数为空:
+  <|EPSE|tool_calls>
+    <|EPSE|invoke name="Bash">
+      <|EPSE|parameter name="command"></|EPSE|parameter>
+    </|EPSE|invoke>
+  </|EPSE|tool_calls>
 
-Remember: The ONLY valid way to use tools is the <|DSML|tool_calls>...</|DSML|tool_calls> block at the end of your response.
+请记住：使用工具的唯一正确方式是在回复末尾使用 <|EPSE|tool_calls>...</|EPSE|tool_calls> 代码块。
 ` + buildCorrectToolExamples(toolNames)
 }
 
@@ -73,25 +73,25 @@ func buildCorrectToolExamples(toolNames []string) string {
 	examples := make([]string, 0, 4)
 
 	if single, ok := firstBasicExample(names); ok {
-		examples = append(examples, "Example A — Single tool:\n"+renderToolExampleBlock([]promptToolExample{single}))
+		examples = append(examples, "示例 A — 单个工具：\n"+renderToolExampleBlock([]promptToolExample{single}))
 	}
 
 	if parallel := firstNBasicExamples(names, 2); len(parallel) >= 2 {
-		examples = append(examples, "Example B — Two tools in parallel:\n"+renderToolExampleBlock(parallel))
+		examples = append(examples, "示例 B — 两个工具并行：\n"+renderToolExampleBlock(parallel))
 	}
 
 	if nested, ok := firstNestedExample(names); ok {
-		examples = append(examples, "Example C — Tool with nested XML parameters:\n"+renderToolExampleBlock([]promptToolExample{nested}))
+		examples = append(examples, "示例 C — 带嵌套 XML 参数的工具：\n"+renderToolExampleBlock([]promptToolExample{nested}))
 	}
 
 	if script, ok := firstScriptExample(names); ok {
-		examples = append(examples, "Example D — Tool with long script using CDATA (RELIABLE FOR CODE/SCRIPTS):\n"+renderToolExampleBlock([]promptToolExample{script}))
+		examples = append(examples, "示例 D — 使用 CDATA 的长脚本工具（对代码/脚本可靠）：\n"+renderToolExampleBlock([]promptToolExample{script}))
 	}
 
 	if len(examples) == 0 {
 		return ""
 	}
-	return "【CORRECT EXAMPLES】:\n\n" + strings.Join(examples, "\n\n") + "\n\n"
+	return "【正确示例】：\n\n" + strings.Join(examples, "\n\n") + "\n\n"
 }
 
 func uniqueToolNames(toolNames []string) []string {
@@ -150,21 +150,21 @@ func firstScriptExample(names []string) (promptToolExample, bool) {
 
 func renderToolExampleBlock(calls []promptToolExample) string {
 	var b strings.Builder
-	b.WriteString("<|DSML|tool_calls>\n")
+	b.WriteString("<|EPSE|tool_calls>\n")
 	for _, call := range calls {
-		b.WriteString(`  <|DSML|invoke name="`)
+		b.WriteString(`  <|EPSE|invoke name="`)
 		b.WriteString(call.name)
 		b.WriteString(`">` + "\n")
 		b.WriteString(indentPromptParameters(call.params, "    "))
-		b.WriteString("\n  </|DSML|invoke>\n")
+		b.WriteString("\n  </|EPSE|invoke>\n")
 	}
-	b.WriteString("</|DSML|tool_calls>")
+	b.WriteString("</|EPSE|tool_calls>")
 	return b.String()
 }
 
 func indentPromptParameters(body, indent string) string {
 	if strings.TrimSpace(body) == "" {
-		return indent + `<|DSML|parameter name="content"></|DSML|parameter>`
+		return indent + `<|EPSE|parameter name="content"></|EPSE|parameter>`
 	}
 	lines := strings.Split(body, "\n")
 	for i, line := range lines {
@@ -178,7 +178,7 @@ func indentPromptParameters(body, indent string) string {
 }
 
 func wrapParameter(name, inner string) string {
-	return `<|DSML|parameter name="` + name + `">` + inner + `</|DSML|parameter>`
+	return `<|EPSE|parameter name="` + name + `">` + inner + `</|EPSE|parameter>`
 }
 
 func exampleBasicParams(name string) (string, bool) {
@@ -204,7 +204,7 @@ func exampleBasicParams(name string) (string, bool) {
 	case "Edit":
 		return wrapParameter("file_path", promptCDATA("README.md")) + "\n" + wrapParameter("old_string", promptCDATA("foo")) + "\n" + wrapParameter("new_string", promptCDATA("bar")), true
 	case "MultiEdit":
-		return wrapParameter("file_path", promptCDATA("README.md")) + "\n" + `<|DSML|parameter name="edits"><item><old_string>` + promptCDATA("foo") + `</old_string><new_string>` + promptCDATA("bar") + `</new_string></item></|DSML|parameter>`, true
+		return wrapParameter("file_path", promptCDATA("README.md")) + "\n" + `<|EPSE|parameter name="edits"><item><old_string>` + promptCDATA("foo") + `</old_string><new_string>` + promptCDATA("bar") + `</new_string></item></|EPSE|parameter>`, true
 	}
 	return "", false
 }
@@ -212,11 +212,11 @@ func exampleBasicParams(name string) (string, bool) {
 func exampleNestedParams(name string) (string, bool) {
 	switch strings.TrimSpace(name) {
 	case "MultiEdit":
-		return wrapParameter("file_path", promptCDATA("README.md")) + "\n" + `<|DSML|parameter name="edits"><item><old_string>` + promptCDATA("foo") + `</old_string><new_string>` + promptCDATA("bar") + `</new_string></item></|DSML|parameter>`, true
+		return wrapParameter("file_path", promptCDATA("README.md")) + "\n" + `<|EPSE|parameter name="edits"><item><old_string>` + promptCDATA("foo") + `</old_string><new_string>` + promptCDATA("bar") + `</new_string></item></|EPSE|parameter>`, true
 	case "Task":
 		return wrapParameter("description", promptCDATA("Investigate flaky tests")) + "\n" + wrapParameter("prompt", promptCDATA("Run targeted tests and summarize failures")), true
 	case "ask_followup_question":
-		return wrapParameter("question", promptCDATA("Which approach do you prefer?")) + "\n" + `<|DSML|parameter name="follow_up"><item><text>` + promptCDATA("Option A") + `</text></item><item><text>` + promptCDATA("Option B") + `</text></item></|DSML|parameter>`, true
+		return wrapParameter("question", promptCDATA("Which approach do you prefer?")) + "\n" + `<|EPSE|parameter name="follow_up"><item><text>` + promptCDATA("Option A") + `</text></item><item><text>` + promptCDATA("Option B") + `</text></item></|EPSE|parameter>`, true
 	}
 	return "", false
 }

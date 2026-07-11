@@ -86,7 +86,7 @@ func TestBuildOpenAICurrentInputContextTranscriptUsesNumberedHistorySections(t *
 		"latest user turn",
 		"[reasoning_content]",
 		"hidden reasoning",
-		"<|DSML|tool_calls>",
+		"<|EPSE|tool_calls>",
 	} {
 		if !strings.Contains(transcript, want) {
 			t.Fatalf("expected transcript to contain %q, got %q", want, transcript)
@@ -435,13 +435,13 @@ func TestApplyCurrentInputFileUploadsToolsContextSeparately(t *testing.T) {
 			t.Fatalf("expected tools transcript to contain %q, got %q", want, toolsText)
 		}
 	}
-	if strings.Contains(toolsText, "TOOL CALL FORMAT") {
+	if strings.Contains(toolsText, "工具调用格式规范") {
 		t.Fatalf("tools transcript should not duplicate tool format instructions, got %q", toolsText)
 	}
 	if !strings.Contains(out.FinalPrompt, "Continue from the latest state in the attached DS2API_HISTORY.txt context.") || !strings.Contains(out.FinalPrompt, "DS2API_TOOLS.txt") {
 		t.Fatalf("expected live prompt to reference both context files, got %q", out.FinalPrompt)
 	}
-	if !strings.Contains(out.FinalPrompt, "TOOL CALL FORMAT") || !strings.Contains(out.FinalPrompt, "Remember: The ONLY valid way to use tools") {
+	if !strings.Contains(out.FinalPrompt, "工具调用格式规范") || !strings.Contains(out.FinalPrompt, "请记住：使用工具的唯一正确方式") {
 		t.Fatalf("expected live prompt to retain tool format instructions, got %q", out.FinalPrompt)
 	}
 	if strings.Contains(out.FinalPrompt, "You have access to these tools") || strings.Contains(out.FinalPrompt, "Description: search docs") || strings.Contains(out.FinalPrompt, "Parameters:") {
@@ -663,7 +663,7 @@ func TestResponsesCurrentInputFileUploadsToolsSeparately(t *testing.T) {
 		t.Fatalf("expected tools transcript to include schema, got %q", toolsText)
 	}
 	promptText, _ := ds.completionReq["prompt"].(string)
-	if !strings.Contains(promptText, "DS2API_TOOLS.txt") || !strings.Contains(promptText, "TOOL CALL FORMAT") {
+	if !strings.Contains(promptText, "DS2API_TOOLS.txt") || !strings.Contains(promptText, "工具调用格式规范") {
 		t.Fatalf("expected live prompt to reference tools file and retain format instructions, got %q", promptText)
 	}
 	if strings.Contains(promptText, "Description: search docs") {

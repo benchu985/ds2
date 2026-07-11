@@ -77,7 +77,7 @@ func TestParseToolCalls_IgnoresMarkdownDocumentationExamples(t *testing.T) {
 		"  </invoke>\n" +
 		"</tool_calls>\n" +
 		"```\n\n" +
-		"DSML 风格形如 `<invoke name=\"tool\">...</invoke>`，也可能提到 `<tool_calls>` 包裹。\n"
+		"EPSE 风格形如 `<invoke name=\"tool\">...</invoke>`，也可能提到 `<tool_calls>` 包裹。\n"
 
 	got := ParseToolCallsDetailed(text, []string{"read_file"})
 	if len(got.Calls) != 0 {

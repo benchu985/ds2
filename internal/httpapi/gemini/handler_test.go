@@ -250,7 +250,7 @@ func TestGeminiCurrentInputFileUploadsToolsSeparately(t *testing.T) {
 		t.Fatalf("expected history and tools ref ids first, got %#v", ds.payloads[0]["ref_file_ids"])
 	}
 	prompt, _ := ds.payloads[0]["prompt"].(string)
-	if !strings.Contains(prompt, "DS2API_TOOLS.txt") || !strings.Contains(prompt, "TOOL CALL FORMAT") {
+	if !strings.Contains(prompt, "DS2API_TOOLS.txt") || !strings.Contains(prompt, "工具调用格式规范") {
 		t.Fatalf("expected live prompt to reference tools file and retain format instructions, got %q", prompt)
 	}
 	if strings.Contains(prompt, "Description: eval") {

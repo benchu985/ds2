@@ -1,6 +1,8 @@
 package admin
 
 import (
+	"net/http"
+
 	"github.com/go-chi/chi/v5"
 
 	"ds2api/internal/chathistory"
@@ -23,11 +25,16 @@ type Handler struct {
 	DS          adminshared.DeepSeekCaller
 	OpenAI      adminshared.OpenAIChatCaller
 	ChatHistory *chathistory.Store
+	// WebUIFallback is forwarded to the auth sub-handler so its RequireAdmin
+	// middleware can serve the SPA index.html when a browser navigation request
+	// (GET, no Authorization, Accept: text/html) hits a protected admin API
+	// endpoint that collides with an SPA route (e.g. /admin/settings).
+	WebUIFallback func(http.ResponseWriter, *http.Request) bool
 }
 
 func RegisterRoutes(r chi.Router, h *Handler) {
 	deps := adminsharedDeps(h)
-	authHandler := &adminauth.Handler{Store: deps.Store, Pool: deps.Pool, DS: deps.DS, OpenAI: deps.OpenAI, ChatHistory: deps.ChatHistory}
+	authHandler := &adminauth.Handler{Store: deps.Store, Pool: deps.Pool, DS: deps.DS, OpenAI: deps.OpenAI, ChatHistory: deps.ChatHistory, WebUIFallback: h.WebUIFallback}
 	accountsHandler := &adminaccounts.Handler{Store: deps.Store, Pool: deps.Pool, DS: deps.DS, OpenAI: deps.OpenAI, ChatHistory: deps.ChatHistory}
 	configHandler := &adminconfig.Handler{Store: deps.Store, Pool: deps.Pool, DS: deps.DS, OpenAI: deps.OpenAI, ChatHistory: deps.ChatHistory}
 	settingsHandler := &adminsettings.Handler{Store: deps.Store, Pool: deps.Pool, DS: deps.DS, OpenAI: deps.OpenAI, ChatHistory: deps.ChatHistory}

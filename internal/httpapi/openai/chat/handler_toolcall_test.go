@@ -173,10 +173,10 @@ func TestHandleNonStreamPromotesThinkingToolCallsWhenTextEmpty(t *testing.T) {
 	}
 }
 
-func TestHandleNonStreamPromotesHiddenThinkingDSMLToolCallsWhenTextEmpty(t *testing.T) {
+func TestHandleNonStreamPromotesHiddenThinkingEPSEToolCallsWhenTextEmpty(t *testing.T) {
 	h := &Handler{}
 	resp := makeSSEHTTPResponse(
-		`data: {"p":"response/thinking_content","v":"<|DSML|tool_calls><|DSML|invoke name=\"search\"><|DSML|parameter name=\"q\">from-hidden-thinking</|DSML|parameter></|DSML|invoke></|DSML|tool_calls>"}`,
+		`data: {"p":"response/thinking_content","v":"<|EPSE|tool_calls><|EPSE|invoke name=\"search\"><|EPSE|parameter name=\"q\">from-hidden-thinking</|EPSE|parameter></|EPSE|invoke></|EPSE|tool_calls>"}`,
 		`data: [DONE]`,
 	)
 	rec := httptest.NewRecorder()
@@ -418,10 +418,10 @@ func TestHandleStreamPromotesThinkingToolCallsOnFinalizeWithoutMidstreamIntercep
 	}
 }
 
-func TestHandleStreamPromotesHiddenThinkingDSMLToolCallsOnFinalize(t *testing.T) {
+func TestHandleStreamPromotesHiddenThinkingEPSEToolCallsOnFinalize(t *testing.T) {
 	h := &Handler{}
 	resp := makeSSEHTTPResponse(
-		`data: {"p":"response/thinking_content","v":"<|DSML|tool_calls><|DSML|invoke name=\"search\"><|DSML|parameter name=\"q\">from-hidden-thinking</|DSML|parameter></|DSML|invoke></|DSML|tool_calls>"}`,
+		`data: {"p":"response/thinking_content","v":"<|EPSE|tool_calls><|EPSE|invoke name=\"search\"><|EPSE|parameter name=\"q\">from-hidden-thinking</|EPSE|parameter></|EPSE|invoke></|EPSE|tool_calls>"}`,
 		`data: [DONE]`,
 	)
 	rec := httptest.NewRecorder()
