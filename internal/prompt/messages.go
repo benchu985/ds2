@@ -10,10 +10,10 @@ import (
 var markdownImagePattern = regexp.MustCompile(`!\[(.*?)\]\((.*?)\)`)
 
 const (
-	systemMarker    = "System"
-	userMarker      = "User"
-	assistantMarker = "Assistant"
-	toolMarker      = "Tool"
+	systemMarker    = "<System>:"
+	userMarker      = "<User>:"
+	assistantMarker = "<Assistant>:"
+	toolMarker      = "<Tool>:"
 )
 
 func MessagesPrepare(messages []map[string]any) string {

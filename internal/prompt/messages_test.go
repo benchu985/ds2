@@ -32,13 +32,13 @@ func TestMessagesPrepareUsesTurnSuffixes(t *testing.T) {
 		{"role": "assistant", "content": "Answer"},
 	}
 	got := MessagesPrepare(messages)
-	if !strings.HasPrefix(got, "SystemSystem rule") {
+	if !strings.HasPrefix(got, "<System>:System rule") {
 		t.Fatalf("expected system marker at the start, got %q", got)
 	}
-	if !strings.Contains(got, "UserQuestion") {
+	if !strings.Contains(got, "<User>:Question") {
 		t.Fatalf("expected user question, got %q", got)
 	}
-	if !strings.Contains(got, "AssistantAnswer") {
+	if !strings.Contains(got, "<Assistant>:Answer") {
 		t.Fatalf("expected assistant answer, got %q", got)
 	}
 }
@@ -59,7 +59,7 @@ func TestMessagesPrepareWithThinkingPreservesPromptShape(t *testing.T) {
 	if gotThinking != gotPlain {
 		t.Fatalf("expected thinking flag not to add extra continuity instructions, got thinking=%q plain=%q", gotThinking, gotPlain)
 	}
-	if !strings.HasSuffix(gotThinking, "Assistant") {
+	if !strings.HasSuffix(gotThinking, "<Assistant>:") {
 		t.Fatalf("expected assistant suffix, got %q", gotThinking)
 	}
 }
