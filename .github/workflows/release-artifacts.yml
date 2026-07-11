@@ -60,6 +60,14 @@ jobs:
           RELEASE_BUILD_JOBS: "3"
         run: ./scripts/build-release-archives.sh
 
+      - name: Build Docker Compose bundle
+        run: |
+          set -euo pipefail
+          mkdir -p dist/docker-compose-bundle
+          cp docker-compose.yml docker-compose.dev.yml config.example.json .env.example dist/docker-compose-bundle/
+          tar -C dist/docker-compose-bundle -czf dist/docker-compose.tar.gz .
+          rm -rf dist/docker-compose-bundle
+
       - name: Prepare Docker release inputs
         run: |
           set -euo pipefail

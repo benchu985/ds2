@@ -232,18 +232,24 @@ cp config.example.json config.json
 
 ### 方式二：Docker 运行
 
+从最新 Release 下载 `docker-compose.tar.gz`（内含 `docker-compose.yml`、`docker-compose.dev.yml`、`config.example.json`、`.env.example` 四个文件）：
+
 ```bash
-# 1. 准备环境变量和配置文件
+# 1. 下载并解压
+wget https://github.com/ouqiting/ds2api/releases/latest/download/docker-compose.tar.gz
+tar -xzf docker-compose.tar.gz
+
+# 2. 准备环境变量和配置文件
 cp .env.example .env
 cp config.example.json config.json
 
-# 2. 编辑 .env（至少设置 DS2API_ADMIN_KEY；如需修改宿主机端口，可额外设置 DS2API_HOST_PORT）
+# 3. 编辑 .env（至少设置 DS2API_ADMIN_KEY；如需修改宿主机端口，可额外设置 DS2API_HOST_PORT）
 #    DS2API_ADMIN_KEY=请替换为强密码
 
-# 3. 启动
+# 4. 启动
 docker-compose up -d
 
-# 4. 查看日志
+# 5. 查看日志
 docker-compose logs -f
 ```
 
