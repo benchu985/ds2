@@ -160,8 +160,6 @@ OpenAI `/v1/*` 仍是推荐的规范路径；同时支持 `/models`、`/chat/com
 | expert | `deepseek-v4-pro-nothinking` | 永久关闭，不受请求参数影响 | ❌ |
 | default | `deepseek-v4-flash-search` | 默认开启，可由请求参数控制 | ✅ |
 | default | `deepseek-v4-flash-search-nothinking` | 永久关闭，不受请求参数影响 | ✅ |
-| expert | `deepseek-v4-pro-search` | 默认开启，可由请求参数控制 | ✅ |
-| expert | `deepseek-v4-pro-search-nothinking` | 永久关闭，不受请求参数影响 | ✅ |
 | vision | `deepseek-v4-vision` | 默认开启，可由请求参数控制 | ❌ |
 | vision | `deepseek-v4-vision-nothinking` | 永久关闭，不受请求参数影响 | ❌ |
 
@@ -325,7 +323,7 @@ go run ./cmd/ds2api
 - `model_aliases`：OpenAI / Claude / Gemini 共用的模型 alias 映射。
 - `runtime`：账号并发、队列与 token 刷新策略，可通过 Admin Settings 热更新。
 - `auto_delete.mode`：请求结束后的远端会话清理策略，支持 `none` / `single` / `all`。
-- `current_input_file`：全局生效的上下文拆分上传策略；默认关闭，开启且阈值为 `0` 时，触发时将完整上下文合并上传为 `DS2API_HISTORY.txt` 上下文文件。
+- `current_input_file`：全局生效的上下文拆分上传策略；默认关闭，开启且阈值为 `0` 时，触发时将完整上下文合并上传为 `DS2API_HISTORY.txt` 上下文文件。expert（pro）模型不支持文件上传，即使开启此选项也不会生成 `DS2API_HISTORY.txt`，客户端传入的文件引用也会被忽略。
 - 如果关闭 `current_input_file`，请求会直接透传，不上传拆分上下文文件。
 - `thinking_injection`：默认关闭；开启后在最新 user 消息末尾追加思考增强提示词，提高高强度推理与工具调用前的思考稳定性；`prompt` 留空时使用内置默认提示词。
 

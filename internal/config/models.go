@@ -33,7 +33,6 @@ var deepSeekBaseModels = []ModelInfo{
 	{ID: "deepseek-v4-flash", Object: "model", Created: 1677610602, OwnedBy: "deepseek", Permission: []any{}},
 	{ID: "deepseek-v4-pro", Object: "model", Created: 1677610602, OwnedBy: "deepseek", Permission: []any{}},
 	{ID: "deepseek-v4-flash-search", Object: "model", Created: 1677610602, OwnedBy: "deepseek", Permission: []any{}},
-	{ID: "deepseek-v4-pro-search", Object: "model", Created: 1677610602, OwnedBy: "deepseek", Permission: []any{}},
 	{ID: "deepseek-v4-vision", Object: "model", Created: 1677610602, OwnedBy: "deepseek", Permission: []any{}},
 }
 
@@ -41,12 +40,10 @@ var OllamaCapabilitiesModels = []OllamaCapabilitiesModelInfo{
 	{ID: "deepseek-v4-flash", Capabilities: []string{"tools", "thinking"}},
 	{ID: "deepseek-v4-pro", Capabilities: []string{"tools", "thinking"}},
 	{ID: "deepseek-v4-flash-search", Capabilities: []string{"tools", "thinking"}},
-	{ID: "deepseek-v4-pro-search", Capabilities: []string{"tools", "thinking"}},
 	{ID: "deepseek-v4-vision", Capabilities: []string{"tools", "thinking", "vision"}},
 	{ID: "deepseek-v4-flash-nothinking", Capabilities: []string{"tools"}},
 	{ID: "deepseek-v4-pro-nothinking", Capabilities: []string{"tools"}},
 	{ID: "deepseek-v4-flash-search-nothinking", Capabilities: []string{"tools"}},
-	{ID: "deepseek-v4-pro-search-nothinking", Capabilities: []string{"tools"}},
 	{ID: "deepseek-v4-vision-nothinking", Capabilities: []string{"tools", "vision"}},
 }
 
@@ -92,7 +89,7 @@ func GetModelConfig(model string) (thinking bool, search bool, ok bool) {
 	switch baseModel {
 	case "deepseek-v4-flash", "deepseek-v4-pro", "deepseek-v4-vision":
 		return !noThinking, false, true
-	case "deepseek-v4-flash-search", "deepseek-v4-pro-search":
+	case "deepseek-v4-flash-search":
 		return !noThinking, true, true
 	default:
 		return false, false, false
@@ -104,7 +101,7 @@ func GetModelType(model string) (modelType string, ok bool) {
 	switch baseModel {
 	case "deepseek-v4-flash", "deepseek-v4-flash-search":
 		return "default", true
-	case "deepseek-v4-pro", "deepseek-v4-pro-search":
+	case "deepseek-v4-pro":
 		return "expert", true
 	case "deepseek-v4-vision":
 		return "vision", true
@@ -169,9 +166,9 @@ func DefaultModelAliases() map[string]string {
 		"o3":                    "deepseek-v4-pro",
 		"o3-mini":               "deepseek-v4-pro",
 		"o3-pro":                "deepseek-v4-pro",
-		"o3-deep-research":      "deepseek-v4-pro-search",
+		"o3-deep-research":      "deepseek-v4-flash-search",
 		"o4-mini":               "deepseek-v4-pro",
-		"o4-mini-deep-research": "deepseek-v4-pro-search",
+		"o4-mini-deep-research": "deepseek-v4-flash-search",
 
 		// Claude current and historical aliases
 		"claude-opus-4-6":            "deepseek-v4-pro",

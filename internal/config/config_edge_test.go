@@ -49,16 +49,6 @@ func TestGetModelConfigDeepSeekChatSearch(t *testing.T) {
 	}
 }
 
-func TestGetModelConfigDeepSeekReasonerSearch(t *testing.T) {
-	thinking, search, ok := GetModelConfig("deepseek-v4-pro-search")
-	if !ok {
-		t.Fatal("expected ok for deepseek-v4-pro-search")
-	}
-	if !thinking || !search {
-		t.Fatalf("expected both true, got thinking=%v search=%v", thinking, search)
-	}
-}
-
 func TestGetModelConfigDeepSeekExpertChat(t *testing.T) {
 	thinking, search, ok := GetModelConfig("deepseek-v4-pro")
 	if !ok {
@@ -66,16 +56,6 @@ func TestGetModelConfigDeepSeekExpertChat(t *testing.T) {
 	}
 	if !thinking || search {
 		t.Fatalf("expected thinking=true search=false for deepseek-v4-pro, got thinking=%v search=%v", thinking, search)
-	}
-}
-
-func TestGetModelConfigDeepSeekExpertReasonerSearch(t *testing.T) {
-	thinking, search, ok := GetModelConfig("deepseek-v4-pro-search")
-	if !ok {
-		t.Fatal("expected ok for deepseek-v4-pro-search")
-	}
-	if !thinking || !search {
-		t.Fatalf("expected both true, got thinking=%v search=%v", thinking, search)
 	}
 }
 
@@ -614,13 +594,13 @@ func TestNormalizeCredentialsPrefersStructuredAPIKeys(t *testing.T) {
 }
 
 func TestStoreModelAliasesIncludesDefaultsAndOverrides(t *testing.T) {
-	t.Setenv("DS2API_CONFIG_JSON", `{"keys":[],"accounts":[],"model_aliases":{"claude-opus-4-6":"deepseek-v4-pro-search"}}`)
+	t.Setenv("DS2API_CONFIG_JSON", `{"keys":[],"accounts":[],"model_aliases":{"claude-opus-4-6":"deepseek-v4-flash-search"}}`)
 	store := LoadStore()
 	aliases := store.ModelAliases()
 	if aliases["claude-sonnet-4-6"] != "deepseek-v4-flash" {
 		t.Fatalf("expected default alias to remain available, got %q", aliases["claude-sonnet-4-6"])
 	}
-	if aliases["claude-opus-4-6"] != "deepseek-v4-pro-search" {
+	if aliases["claude-opus-4-6"] != "deepseek-v4-flash-search" {
 		t.Fatalf("expected custom alias override, got %q", aliases["claude-opus-4-6"])
 	}
 }
@@ -689,8 +669,6 @@ func TestOpenAIModelsResponse(t *testing.T) {
 		"deepseek-v4-pro-nothinking":          false,
 		"deepseek-v4-flash-search":            false,
 		"deepseek-v4-flash-search-nothinking": false,
-		"deepseek-v4-pro-search":              false,
-		"deepseek-v4-pro-search-nothinking":   false,
 		"deepseek-v4-vision":                  false,
 		"deepseek-v4-vision-nothinking":       false,
 	}

@@ -226,7 +226,6 @@
             "flash": "v4 Flash（默认开启思考）",
             "pro": "v4 Pro（默认开启思考）",
             "flashSearch": "v4 Flash（带搜索）",
-            "proSearch": "v4 Pro（带搜索）",
             "vision": "v4 Vision（默认开启思考）",
             "generic": "兼容模型",
             "noThinking": "强制关闭思考"
@@ -394,7 +393,7 @@
         "responsesTTL": "Responses 缓存 TTL（秒）",
         "embeddingsProvider": "Embeddings Provider",
         "thinkingInjectionEnabled": "思考格式注入",
-        "thinkingInjectionDesc": "默认关闭。开启后在组装 prompt 前，将结构化 🤔 检查清单追加到最新用户消息末尾。",
+        "thinkingInjectionDesc": "默认关闭。开启后在组装 prompt 前，将结构化思考检查清单追加到最新用户消息末尾。",
         "thinkingInjectionPrompt": "思考格式提示词",
         "thinkingInjectionPromptHelp": "留空时使用内置默认提示词；默认内容会显示在输入框占位文本中。",
         "currentInputFileTitle": "独立拆分",

@@ -70,11 +70,13 @@ func (r StandardRequest) CompletionPayload(sessionID string) map[string]any {
 		modelType = resolvedType
 	}
 	refFileIDs := make([]any, 0, len(r.RefFileIDs))
-	for _, fileID := range r.RefFileIDs {
-		if fileID == "" {
-			continue
+	if modelType != "expert" {
+		for _, fileID := range r.RefFileIDs {
+			if fileID == "" {
+				continue
+			}
+			refFileIDs = append(refFileIDs, fileID)
 		}
-		refFileIDs = append(refFileIDs, fileID)
 	}
 	payload := map[string]any{
 		"chat_session_id":   sessionID,

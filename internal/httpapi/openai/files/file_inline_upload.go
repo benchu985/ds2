@@ -68,6 +68,9 @@ func (h *Handler) PreprocessInlineFileInputs(ctx context.Context, a *auth.Reques
 			}
 		}
 	}
+	if modelType == "expert" {
+		return nil
+	}
 	state := &inlineUploadState{
 		ctx:          ctx,
 		handler:      h,

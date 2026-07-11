@@ -13,8 +13,6 @@ function describeModel(t, modelID) {
     let description = t('apiTester.models.generic')
     if (modelID.includes('vision')) {
         description = t('apiTester.models.vision')
-    } else if (modelID.includes('pro-search')) {
-        description = t('apiTester.models.proSearch')
     } else if (modelID.includes('pro')) {
         description = t('apiTester.models.pro')
     } else if (modelID.includes('flash-search')) {

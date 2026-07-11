@@ -154,7 +154,7 @@ func TestGeminiDirectAppliesCurrentInputFile(t *testing.T) {
 		ChatHistory: historyStore,
 	}
 	reqBody := `{"contents":[{"role":"user","parts":[{"text":"hello from gemini"}]}]}`
-	req := httptest.NewRequest(http.MethodPost, "/v1beta/models/gemini-2.5-pro:generateContent", strings.NewReader(reqBody))
+	req := httptest.NewRequest(http.MethodPost, "/v1beta/models/gemini-2.5-flash:generateContent", strings.NewReader(reqBody))
 	req.Header.Set("Content-Type", "application/json")
 	rec := httptest.NewRecorder()
 	r := chi.NewRouter()
@@ -220,7 +220,7 @@ func TestGeminiCurrentInputFileUploadsToolsSeparately(t *testing.T) {
 		"contents":[{"role":"user","parts":[{"text":"run code"}]}],
 		"tools":[{"functionDeclarations":[{"name":"eval_javascript","description":"eval","parameters":{"type":"object","properties":{"code":{"type":"string"}}}}]}]
 	}`
-	req := httptest.NewRequest(http.MethodPost, "/v1beta/models/gemini-2.5-pro:generateContent", strings.NewReader(reqBody))
+	req := httptest.NewRequest(http.MethodPost, "/v1beta/models/gemini-2.5-flash:generateContent", strings.NewReader(reqBody))
 	req.Header.Set("Content-Type", "application/json")
 	rec := httptest.NewRecorder()
 	r := chi.NewRouter()

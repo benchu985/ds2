@@ -50,8 +50,14 @@ func TestStandardRequestCompletionPayloadSetsModelTypeFromResolvedModel(t *testi
 			if !ok {
 				t.Fatalf("expected ref_file_ids slice, got %#v", payload["ref_file_ids"])
 			}
-			if len(refFileIDs) != 2 || refFileIDs[0] != "file-a" || refFileIDs[1] != "file-b" {
-				t.Fatalf("unexpected ref_file_ids: %#v", refFileIDs)
+			if tc.modelType == "expert" {
+				if len(refFileIDs) != 0 {
+					t.Fatalf("expected empty ref_file_ids for expert model, got %#v", refFileIDs)
+				}
+			} else {
+				if len(refFileIDs) != 2 || refFileIDs[0] != "file-a" || refFileIDs[1] != "file-b" {
+					t.Fatalf("unexpected ref_file_ids: %#v", refFileIDs)
+				}
 			}
 		})
 	}

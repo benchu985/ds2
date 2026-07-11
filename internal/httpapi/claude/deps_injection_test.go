@@ -19,13 +19,13 @@ func TestNormalizeClaudeRequestUsesGlobalAliasMapping(t *testing.T) {
 	}
 	out, err := normalizeClaudeRequest(mockClaudeConfig{
 		aliases: map[string]string{
-			"claude-opus-4-6": "deepseek-v4-pro-search",
+			"claude-opus-4-6": "deepseek-v4-flash-search",
 		},
 	}, req)
 	if err != nil {
 		t.Fatalf("normalizeClaudeRequest error: %v", err)
 	}
-	if out.Standard.ResolvedModel != "deepseek-v4-pro-search" {
+	if out.Standard.ResolvedModel != "deepseek-v4-flash-search" {
 		t.Fatalf("resolved model mismatch: got=%q", out.Standard.ResolvedModel)
 	}
 	if !out.Standard.Thinking || !out.Standard.Search {

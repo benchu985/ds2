@@ -56,7 +56,7 @@ func TestResolveExpandedHistoricalAliases(t *testing.T) {
 	}{
 		{name: "openai old chatgpt", model: "chatgpt-4o", want: "deepseek-v4-flash"},
 		{name: "openai codex max", model: "gpt-5.1-codex-max", want: "deepseek-v4-pro"},
-		{name: "openai deep research", model: "o3-deep-research", want: "deepseek-v4-pro-search"},
+		{name: "openai deep research", model: "o3-deep-research", want: "deepseek-v4-flash-search"},
 		{name: "openai historical reasoning", model: "o1-preview", want: "deepseek-v4-pro"},
 		{name: "claude latest historical", model: "claude-3-5-sonnet-latest", want: "deepseek-v4-flash"},
 		{name: "claude historical opus", model: "claude-3-opus-20240229", want: "deepseek-v4-pro"},
@@ -128,10 +128,10 @@ func TestResolveModelDirectDeepSeekExpert(t *testing.T) {
 
 func TestResolveModelCustomAliasToExpert(t *testing.T) {
 	got, ok := ResolveModel(mockModelAliasReader{
-		"my-expert-model": "deepseek-v4-pro-search",
+		"my-expert-model": "deepseek-v4-flash-search",
 	}, "my-expert-model")
-	if !ok || got != "deepseek-v4-pro-search" {
-		t.Fatalf("expected alias -> deepseek-v4-pro-search, got ok=%v model=%q", ok, got)
+	if !ok || got != "deepseek-v4-flash-search" {
+		t.Fatalf("expected alias -> deepseek-v4-flash-search, got ok=%v model=%q", ok, got)
 	}
 }
 
