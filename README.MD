@@ -4,9 +4,9 @@
 
 # DS2API
 
-## 注：本项目由原作者版本 [CJackHwang/ds2api](https://github.com/CJackHwang/ds2api)二次开发。原仓库已归档
+## 注：本项目由原作者版本([CJackHwang/ds2api](https://github.com/CJackHwang/ds2api)) 二次开发而来。原仓库现已归档
 
-### 在原仓库基础上进行修改，在保留核心功能的基础上，主要解决deepseek封号问题。效果显著(?)
+### 在保留核心功能的基础上做出了若干修改，主要解决deepseek封号问题。效果显著(?) 实测目前个人使用几乎已无禁言封号风险
 
 
 
