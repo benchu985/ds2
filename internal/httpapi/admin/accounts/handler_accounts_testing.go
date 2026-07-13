@@ -124,6 +124,12 @@ func (h *Handler) testAccount(ctx context.Context, acc config.Account, model, me
 	if err := h.Store.UpdateAccountToken(acc.Identifier(), token); err != nil {
 		result["config_warning"] = "登录成功，但 token 持久化失败（仅保存在内存，重启后会丢失）: " + err.Error()
 	}
+	if acc.IsMuted() {
+		result["message"] = fmt.Sprintf("账号已被禁言，解禁时间: %s", formatMuteUntil(acc.MutedUntil))
+		result["muted"] = true
+		result["muted_until"] = acc.MutedUntil
+		return result
+	}
 	authCtx := &authn.RequestAuth{UseConfigToken: false, DeepSeekToken: token, AccountID: identifier, Account: acc}
 	proxyCtx := authn.WithAuth(ctx, authCtx)
 	sessionID, err := h.DS.CreateSession(proxyCtx, authCtx, 1)
@@ -296,4 +302,12 @@ func (h *Handler) deleteAllSessions(w http.ResponseWriter, r *http.Request) {
 	}
 
 	writeJSON(w, http.StatusOK, map[string]any{"success": true, "message": "删除成功"})
+}
+
+func formatMuteUntil(muteUntil float64) string {
+	if muteUntil <= 0 {
+		return "未知"
+	}
+	t := time.Unix(int64(muteUntil), 0)
+	return t.Format("2006-01-02 15:04:05")
 }

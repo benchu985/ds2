@@ -63,6 +63,8 @@ func (streamStatusManagedAuthStub) Release(_ *auth.RequestAuth) {}
 
 func (streamStatusManagedAuthStub) ToolsEnabledForRequest(_ *http.Request) bool { return true }
 
+func (streamStatusManagedAuthStub) SetAccountMutedUntil(_ *auth.RequestAuth, _ float64) {}
+
 func TestBuildOpenAICurrentInputContextTranscriptUsesNumberedHistorySections(t *testing.T) {
 	transcript := buildOpenAICurrentInputContextTranscript(historySplitTestMessages())
 

@@ -260,6 +260,30 @@ func (a *RequestAuth) DisableAccount() {
 	a.resolver.DisableAccount(a)
 }
 
+// SetAccountMutedUntil 持久化账号禁言到期时间。
+// 与 DisableAccount 不同，这只是临时禁用，到期后号池会自动恢复调度。
+func (r *Resolver) SetAccountMutedUntil(a *RequestAuth, muteUntil float64) {
+	if !a.UseConfigToken || a.AccountID == "" || muteUntil <= 0 {
+		return
+	}
+	identifier := a.AccountID
+	if err := r.Store.Update(func(c *config.Config) error {
+		for i := range c.Accounts {
+			if c.Accounts[i].Identifier() != identifier {
+				continue
+			}
+			c.Accounts[i].MutedUntil = muteUntil
+			return nil
+		}
+		return nil
+	}); err != nil {
+		config.Logger.Error("[muted_account] failed to persist muted_until", "account", identifier, "error", err)
+		return
+	}
+	a.Account.MutedUntil = muteUntil
+	config.Logger.Info("[muted_account] account muted until", "account", identifier, "mute_until", muteUntil)
+}
+
 func (r *Resolver) SwitchAccount(ctx context.Context, a *RequestAuth) bool {
 	if !a.UseConfigToken {
 		return false

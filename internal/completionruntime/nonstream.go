@@ -68,6 +68,9 @@ func StartCompletion(ctx context.Context, ds DeepSeekCaller, a *auth.RequestAuth
 	payload := stdReq.CompletionPayload(sessionID)
 	resp, err := ds.CallCompletion(ctx, a, payload, pow, maxAttempts)
 	if err != nil {
+		if dsclient.IsMutedError(err) {
+			return StartResult{SessionID: sessionID, Payload: payload, Pow: pow, Request: stdReq}, &assistantturn.OutputError{Status: http.StatusForbidden, Message: "Account is muted by upstream.", Code: "account_muted"}
+		}
 		return StartResult{SessionID: sessionID, Payload: payload, Pow: pow, Request: stdReq}, &assistantturn.OutputError{Status: http.StatusInternalServerError, Message: "Failed to get completion.", Code: "error"}
 	}
 	return StartResult{SessionID: sessionID, Payload: payload, Pow: pow, Response: resp, Request: stdReq}, nil
@@ -195,6 +198,9 @@ func canRetryOnAlternateAccount(ctx context.Context, a *auth.RequestAuth, outErr
 	if outErr == nil || !retryEnabled || a == nil || !a.UseConfigToken {
 		return false
 	}
+	if isAccountMuted(outErr) {
+		return a.SwitchAccount(ctx)
+	}
 	if isUpstreamUnavailable(outErr) {
 		a.DisableAccount()
 		return a.SwitchAccount(ctx)
@@ -211,6 +217,10 @@ func canRetryOnAlternateAccount(ctx context.Context, a *auth.RequestAuth, outErr
 
 func isUpstreamUnavailable(outErr *assistantturn.OutputError) bool {
 	return outErr != nil && outErr.Code == "upstream_unavailable"
+}
+
+func isAccountMuted(outErr *assistantturn.OutputError) bool {
+	return outErr != nil && outErr.Code == "account_muted"
 }
 
 func startStandardCompletionOnAlternateAccount(ctx context.Context, ds DeepSeekCaller, a *auth.RequestAuth, stdReq promptcompat.StandardRequest, opts Options, maxAttempts int) (StartResult, *assistantturn.OutputError) {
@@ -230,6 +240,9 @@ func startStandardCompletionOnAlternateAccount(ctx context.Context, ds DeepSeekC
 	payload := stdReq.CompletionPayload(sessionID)
 	resp, err := ds.CallCompletion(ctx, a, payload, pow, maxAttempts)
 	if err != nil {
+		if dsclient.IsMutedError(err) {
+			return StartResult{SessionID: sessionID, Payload: payload, Pow: pow}, &assistantturn.OutputError{Status: http.StatusForbidden, Message: "Account is muted by upstream.", Code: "account_muted"}
+		}
 		return StartResult{SessionID: sessionID, Payload: payload, Pow: pow}, &assistantturn.OutputError{Status: http.StatusInternalServerError, Message: "Failed to get completion.", Code: "error"}
 	}
 	return StartResult{SessionID: sessionID, Payload: payload, Pow: pow, Response: resp, Request: stdReq}, nil

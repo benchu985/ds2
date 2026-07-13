@@ -40,6 +40,8 @@ func (streamStatusAuthStub) Release(_ *auth.RequestAuth) {}
 
 func (streamStatusAuthStub) ToolsEnabledForRequest(_ *http.Request) bool { return true }
 
+func (streamStatusAuthStub) SetAccountMutedUntil(_ *auth.RequestAuth, _ float64) {}
+
 type streamStatusDSStub struct {
 	resp *http.Response
 }

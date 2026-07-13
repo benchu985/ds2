@@ -57,6 +57,13 @@ func (c *Client) Login(ctx context.Context, acc config.Account) (string, error) 
 	if strings.TrimSpace(token) == "" {
 		return "", errors.New("missing login token")
 	}
+	if chat, _ := user["chat"].(map[string]any); chat != nil {
+		if isMuted, _ := chat["is_muted"].(float64); isMuted == 1 {
+			muteUntil, _ := chat["mute_until"].(float64)
+			c.persistMutedUntil(acc.Identifier(), muteUntil)
+			config.Logger.Warn("[login] account is muted", "account", acc.Identifier(), "mute_until", muteUntil)
+		}
+	}
 	ssoID, _ := user["id"].(string)
 	loginAuth := &auth.RequestAuth{
 		UseConfigToken: true,
@@ -113,6 +120,26 @@ func (c *Client) reportClientSettingsAfterLogin(ctx context.Context, a *auth.Req
 	}
 	if err := c.ReportClientSettings(ctx, a, ssoID); err != nil {
 		config.Logger.Warn("[client_settings] report after login failed", "account", a.AccountID, "error", err)
+	}
+}
+
+// persistMutedUntil 持久化账号禁言到期时间到配置。
+// muteUntil 为 DeepSeek 返回的 Unix 时间戳（秒，可能含小数）。
+func (c *Client) persistMutedUntil(identifier string, muteUntil float64) {
+	if c == nil || c.Store == nil || strings.TrimSpace(identifier) == "" || muteUntil <= 0 {
+		return
+	}
+	if err := c.Store.Update(func(cfg *config.Config) error {
+		for i := range cfg.Accounts {
+			if cfg.Accounts[i].Identifier() != identifier {
+				continue
+			}
+			cfg.Accounts[i].MutedUntil = muteUntil
+			return nil
+		}
+		return nil
+	}); err != nil {
+		config.Logger.Error("[muted_account] failed to persist muted_until", "account", identifier, "error", err)
 	}
 }
 

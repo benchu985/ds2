@@ -42,6 +42,8 @@ func (managedFilesAuthStub) Release(_ *auth.RequestAuth) {}
 
 func (managedFilesAuthStub) ToolsEnabledForRequest(_ *http.Request) bool { return true }
 
+func (managedFilesAuthStub) SetAccountMutedUntil(_ *auth.RequestAuth, _ float64) {}
+
 type filesRouteDSStub struct {
 	lastReq dsclient.UploadFileRequest
 	upload  *dsclient.UploadFileResult

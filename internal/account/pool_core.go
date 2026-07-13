@@ -107,7 +107,7 @@ func (p *Pool) Status() map[string]any {
 	inUseSlots := 0
 	for _, id := range p.queue {
 		acc, ok := p.store.FindAccount(id)
-		if !ok || !acc.IsEnabled() {
+		if !ok || !acc.IsEnabled() || acc.IsMuted() {
 			continue
 		}
 		if p.inUse[id] < p.maxInflightPerAccount {

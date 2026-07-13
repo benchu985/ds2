@@ -20,6 +20,8 @@ func (routeAliasAuthStub) Release(_ *auth.RequestAuth) {}
 
 func (routeAliasAuthStub) ToolsEnabledForRequest(_ *http.Request) bool { return true }
 
+func (routeAliasAuthStub) SetAccountMutedUntil(_ *auth.RequestAuth, _ float64) {}
+
 func TestClaudeRouteAliasesDoNot404(t *testing.T) {
 	h := &Handler{
 		Auth: routeAliasAuthStub{},

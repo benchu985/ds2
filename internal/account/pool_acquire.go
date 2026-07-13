@@ -64,6 +64,9 @@ func (p *Pool) acquireLocked(target string, exclude map[string]bool, filter Acco
 		if !acc.IsEnabled() {
 			return config.Account{}, false
 		}
+		if acc.IsMuted() {
+			return config.Account{}, false
+		}
 		if filter != nil && !filter(acc) {
 			return config.Account{}, false
 		}
@@ -86,6 +89,9 @@ func (p *Pool) tryAcquire(exclude map[string]bool, filter AccountFilter) (config
 			continue
 		}
 		if !acc.IsEnabled() {
+			continue
+		}
+		if acc.IsMuted() {
 			continue
 		}
 		if filter != nil && !filter(acc) {

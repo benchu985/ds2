@@ -227,11 +227,17 @@ func (h *Handler) handleVercelStreamSwitch(w http.ResponseWriter, r *http.Reques
 	}
 	a := lease.Auth
 	disable, _ := req["disable"].(bool)
-	if disable && a.UseConfigToken {
+	mutedUntil, _ := req["mute_until"].(float64)
+	if mutedUntil > 0 && a.UseConfigToken {
+		h.Auth.SetAccountMutedUntil(a, mutedUntil)
+	}
+	if disable && a.UseConfigToken && mutedUntil <= 0 {
 		a.DisableAccount()
 	}
 	if !a.UseConfigToken || !a.SwitchAccount(r.Context()) {
-		if disable {
+		if mutedUntil > 0 {
+			writeOpenAIErrorWithCode(w, http.StatusForbidden, "Account is muted by upstream.", "account_muted")
+		} else if disable {
 			writeOpenAIErrorWithCode(w, http.StatusServiceUnavailable, "Upstream service is unavailable and returned no output.", "upstream_unavailable")
 		} else {
 			writeOpenAIErrorWithCode(w, http.StatusTooManyRequests, "Upstream account hit a rate limit and returned reasoning without visible output.", "upstream_empty_output")

@@ -1,6 +1,9 @@
 package config
 
-import "strings"
+import (
+	"strings"
+	"time"
+)
 
 const (
 	// PoolTypeDefault 允许无工具调用和含工具调用的请求使用此账号。
@@ -27,6 +30,15 @@ func (a Account) Identifier() string {
 // Disabled accounts are skipped by the pool and auto-disabled on upstream_unavailable.
 func (a Account) IsEnabled() bool {
 	return !a.Disabled
+}
+
+// IsMuted reports whether the account is currently muted (banned from chatting).
+// Returns true only when MutedUntil is set and has not yet expired.
+func (a Account) IsMuted() bool {
+	if a.MutedUntil <= 0 {
+		return false
+	}
+	return a.MutedUntil > float64(time.Now().Unix())
 }
 
 // NormalizePoolType 规范化账号号池类型，空值视为 default。

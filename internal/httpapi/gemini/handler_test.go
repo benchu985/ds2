@@ -48,6 +48,8 @@ func (testGeminiAuth) Release(_ *auth.RequestAuth) {}
 
 func (testGeminiAuth) ToolsEnabledForRequest(_ *http.Request) bool { return true }
 
+func (testGeminiAuth) SetAccountMutedUntil(_ *auth.RequestAuth, _ float64) {}
+
 //nolint:unused // reserved test double for native Gemini DS-call path coverage.
 type testGeminiDS struct {
 	resp        *http.Response

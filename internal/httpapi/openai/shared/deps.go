@@ -23,6 +23,7 @@ type AuthResolver interface {
 	DetermineCaller(req *http.Request) (*auth.RequestAuth, error)
 	Release(a *auth.RequestAuth)
 	ToolsEnabledForRequest(req *http.Request) bool
+	SetAccountMutedUntil(a *auth.RequestAuth, muteUntil float64)
 }
 
 type DeepSeekCaller interface {

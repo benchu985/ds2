@@ -9,6 +9,7 @@ import (
 	"ds2api/internal/assistantturn"
 	"ds2api/internal/auth"
 	"ds2api/internal/config"
+	dsclient "ds2api/internal/deepseek/client"
 	"ds2api/internal/httpapi/openai/history"
 	"ds2api/internal/httpapi/openai/shared"
 	"ds2api/internal/promptcompat"
@@ -117,6 +118,34 @@ func ExecuteStreamWithRetry(ctx context.Context, ds DeepSeekCaller, a *auth.Requ
 		}
 		nextResp, err := ds.CallCompletion(ctx, a, shared.ClonePayloadForEmptyOutputRetry(currentPayload, parentMessageID), retryPow, maxAttempts)
 		if err != nil {
+			if dsclient.IsMutedError(err) {
+				if canRetryOnAlternateAccount(ctx, a, &assistantturn.OutputError{Status: http.StatusForbidden, Code: "account_muted"}, opts.RetryEnabled, &accountSwitchAttempted) {
+					switched, switchErr := startPayloadCompletionOnAlternateAccount(ctx, ds, a, payload, opts, maxAttempts)
+					if switchErr != nil {
+						if hooks.OnRetryFailure != nil {
+							hooks.OnRetryFailure(switchErr.Status, switchErr.Message, switchErr.Code)
+						}
+						return
+					}
+					if switched.Response != nil {
+						config.Logger.Info("[completion_runtime_account_switch_retry] retrying after account muted", "surface", surface, "stream", opts.Stream, "account", a.AccountID)
+						currentResp = switched.Response
+						currentPayload = switched.Payload
+						pow = switched.Pow
+						if hooks.OnAccountSwitch != nil {
+							hooks.OnAccountSwitch(switched.SessionID)
+						}
+						if hooks.OnRetryPrompt != nil {
+							hooks.OnRetryPrompt(opts.UsagePrompt)
+						}
+						continue
+					}
+				}
+				if hooks.OnRetryFailure != nil {
+					hooks.OnRetryFailure(http.StatusForbidden, "Account is muted by upstream.", "account_muted")
+				}
+				return
+			}
 			if hooks.OnRetryFailure != nil {
 				hooks.OnRetryFailure(http.StatusInternalServerError, "Failed to get completion.", "error")
 			}
@@ -198,6 +227,9 @@ func startPayloadCompletionOnAlternateAccount(ctx context.Context, ds DeepSeekCa
 	delete(nextPayload, "parent_message_id")
 	resp, err := ds.CallCompletion(ctx, a, nextPayload, pow, maxAttempts)
 	if err != nil {
+		if dsclient.IsMutedError(err) {
+			return StartResult{SessionID: sessionID, Payload: nextPayload, Pow: pow}, &assistantturn.OutputError{Status: http.StatusForbidden, Message: "Account is muted by upstream.", Code: "account_muted"}
+		}
 		return StartResult{SessionID: sessionID, Payload: nextPayload, Pow: pow}, &assistantturn.OutputError{Status: http.StatusInternalServerError, Message: "Failed to get completion.", Code: "error"}
 	}
 	return StartResult{SessionID: sessionID, Payload: nextPayload, Pow: pow, Response: resp}, nil
