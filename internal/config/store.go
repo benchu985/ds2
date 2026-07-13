@@ -1,6 +1,7 @@
 package config
 
 import (
+	"context"
 	"encoding/base64"
 	"encoding/json"
 	"errors"
@@ -8,6 +9,9 @@ import (
 	"slices"
 	"strings"
 	"sync"
+	"time"
+
+	"ds2api/internal/kv"
 )
 
 type Store struct {
@@ -51,7 +55,27 @@ func loadStore() (*Store, error) {
 	return &Store{cfg: cfg, path: ConfigPath(), fromEnv: fromEnv}, err
 }
 
+const kvConfigKey = "ds2_config"
+
 func loadConfig() (Config, bool, error) {
+	// On Vercel, try loading from Upstash Redis first (persistent across deploys).
+	if IsVercel() && kv.Enabled() {
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+		raw, err := kv.Get(ctx, kvConfigKey)
+		if err == nil && raw != "" {
+			cfg, parseErr := parseConfigString(raw)
+			if parseErr == nil {
+				cfg.NormalizeCredentials()
+				Logger.Info("[config] loaded from Redis (Vercel)")
+				return cfg, true, nil
+			}
+			Logger.Warn("[config] Redis config parse failed, falling back", "error", parseErr)
+		} else if err != nil {
+			Logger.Warn("[config] Redis read failed, falling back", "error", err)
+		}
+	}
+
 	rawCfg := strings.TrimSpace(os.Getenv("DS2API_CONFIG_JSON"))
 	path := ConfigPath()
 	if rawCfg != "" {
@@ -255,6 +279,9 @@ func (s *Store) Save() error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	if s.fromEnv && (IsVercel() || !envWritebackEnabled()) {
+		if IsVercel() && kv.Enabled() {
+			return s.saveToRedis()
+		}
 		Logger.Info("[save_config] source from env, skip write")
 		return nil
 	}
@@ -271,8 +298,33 @@ func (s *Store) Save() error {
 	return nil
 }
 
+// saveToRedis persists the current config to Upstash Redis (Vercel only).
+func (s *Store) saveToRedis() error {
+	persistCfg := s.cfg.Clone()
+	persistCfg.ClearAccountTokens()
+	persistCfg.ClearVercelCredentials()
+	persistCfg.VercelSyncHash = ""
+	persistCfg.VercelSyncTime = 0
+	b, err := json.Marshal(persistCfg)
+	if err != nil {
+		return err
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	if err := kv.Set(ctx, kvConfigKey, string(b)); err != nil {
+		Logger.Warn("[save_config] Redis write failed", "error", err)
+		return err
+	}
+	Logger.Info("[save_config] saved to Redis")
+	return nil
+}
+
 func (s *Store) saveLocked() error {
 	if s.fromEnv && (IsVercel() || !envWritebackEnabled()) {
+		// On Vercel with Redis, persist config to Redis instead of skipping.
+		if IsVercel() && kv.Enabled() {
+			return s.saveToRedis()
+		}
 		Logger.Info("[save_config] source from env, skip write")
 		return nil
 	}
