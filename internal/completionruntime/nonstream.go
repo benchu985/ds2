@@ -202,7 +202,6 @@ func canRetryOnAlternateAccount(ctx context.Context, a *auth.RequestAuth, outErr
 		return a.SwitchAccount(ctx)
 	}
 	if isUpstreamUnavailable(outErr) {
-		a.DisableAccount()
 		return a.SwitchAccount(ctx)
 	}
 	if outErr.Status != http.StatusTooManyRequests {

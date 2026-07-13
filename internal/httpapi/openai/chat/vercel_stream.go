@@ -231,9 +231,6 @@ func (h *Handler) handleVercelStreamSwitch(w http.ResponseWriter, r *http.Reques
 	if mutedUntil > 0 && a.UseConfigToken {
 		h.Auth.SetAccountMutedUntil(a, mutedUntil)
 	}
-	if disable && a.UseConfigToken && mutedUntil <= 0 {
-		a.DisableAccount()
-	}
 	if !a.UseConfigToken || !a.SwitchAccount(r.Context()) {
 		if mutedUntil > 0 {
 			writeOpenAIErrorWithCode(w, http.StatusForbidden, "Account is muted by upstream.", "account_muted")
