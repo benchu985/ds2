@@ -15,9 +15,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/andybalholm/brotli"
 	dsprotocol "ds2api/internal/deepseek/protocol"
 	"ds2api/pow"
+	"github.com/andybalholm/brotli"
 )
 
 type accountCreds struct {
